@@ -47,8 +47,10 @@ export function ModuleTableFooter({
 }
 
 // Clases reutilizables de listas
+export const moduleTableAccentBarClass = "h-1 w-full shrink-0 bg-celeste-trifinio";
+
 export const moduleTableShellClass =
-  "flex flex-col flex-1 min-w-0 bg-white dark:bg-zinc-900 border-y md:border border-zinc-200 dark:border-zinc-800 md:rounded-3xl p-5 overflow-hidden shadow-sm";
+  "flex flex-col flex-1 min-w-0 overflow-hidden rounded-2xl border border-border bg-card dark:border-zinc-700 dark:bg-zinc-900/40 p-5 shadow-sm";
 
 export const moduleTableToolbarClass =
   "flex flex-col xl:flex-row gap-4 mb-4 justify-between items-start";
@@ -63,7 +65,7 @@ export const moduleTableEmptyClass =
   "bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-14 text-center text-zinc-400 font-bold";
 
 export const moduleTableDesktopWrapClass =
-  "hidden md:block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm";
+  "hidden md:block overflow-hidden rounded-2xl border border-border bg-card dark:border-zinc-700 dark:bg-zinc-900/40 shadow-sm";
 
 export const moduleTableListShellClass = cn(
   moduleTableShellClass,
@@ -80,7 +82,7 @@ export const moduleTableDesktopScrollClass = "overflow-x-auto";
 export const moduleTableClass = "w-full text-left text-xs border-collapse";
 
 export const moduleTableHeadRowClass =
-  "bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 font-black uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-700";
+  "border-b border-border bg-sky-50 text-[10px] font-bold uppercase tracking-widest text-celeste-trifinio dark:border-zinc-700 dark:bg-sky-950";
 
 export const moduleTableHeadCellClass = "px-5 py-3.5";
 
@@ -88,7 +90,7 @@ export const moduleTableBodyClass =
   "divide-y divide-zinc-100 dark:divide-zinc-800/50 text-zinc-700 dark:text-zinc-300";
 
 export const moduleTableRowClass =
-  "transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/30";
+  "border-b border-border transition-colors last:border-0 hover:bg-sky-50/40 dark:border-zinc-800 dark:hover:bg-sky-950/20";
 
 export const moduleTableCellClass = "px-5 py-3.5";
 

@@ -3,11 +3,14 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Box,
+  CarFront,
+  ChartColumnIncreasing,
   ChevronRight,
   ChevronsRight,
   CircleDollarSign,
   CreditCard,
   ExternalLink,
+  FileChartColumnIncreasing,
   Fingerprint,
   FolderKanban,
   Home,
@@ -31,6 +34,7 @@ import {
   TabletSmartphone,
   Truck,
   Undo2,
+  Warehouse,
   User,
   UserRoundPlus,
   Users,
@@ -83,6 +87,16 @@ export const moduleIconColors: Record<string, MorphIconColorSet> = {
     boxClass:
       "bg-indigo-50 dark:bg-indigo-950/45 border-indigo-200/90 dark:border-indigo-800/55",
   },
+  "flota-vehicular": {
+    color: "#dc2626",
+    boxClass:
+      "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/50 dark:to-orange-950/30 border-red-200/90 dark:border-red-800/55 shadow-md ring-1 ring-red-500/10 dark:ring-red-400/10",
+  },
+  reporteria: {
+    color: "#4f46e5",
+    boxClass:
+      "bg-gradient-to-br from-indigo-50 to-sky-50 dark:from-indigo-950/50 dark:to-sky-950/30 border-indigo-200/90 dark:border-indigo-800/55 shadow-md ring-1 ring-indigo-500/10 dark:ring-indigo-400/10",
+  },
 };
 
 // COLORES ADMIN
@@ -110,9 +124,18 @@ export const adminIconColors: Record<string, MorphIconColorSet> = {
 export const navIconColors = {
   brand: "#1a6aa5",
   brandBright: "#2E9BD0",
+  brandRed: "#dc2626",
+  brandRedBright: "#ef4444",
   success: "#2E9E77",
   warning: "#C28A38",
   danger: "#CC5C5C",
+} as const;
+
+export const navIconBoxClass = {
+  menuTile:
+    "border-zinc-200/90 bg-zinc-100 shadow-none dark:border-zinc-600/55 dark:bg-zinc-800",
+  menuTileSub:
+    "border-zinc-200/80 bg-zinc-100/95 shadow-none dark:border-zinc-600/50 dark:bg-zinc-800/90",
 } as const;
 
 // ICONOS MORPH MÓDULOS
@@ -124,6 +147,8 @@ export const moduleMorphIcons: Record<string, MorphIconPair> = {
   clientes: { from: Users, to: UserRoundPlus },
   finanzas: { from: Wallet, to: CircleDollarSign },
   creditos: { from: CreditCard, to: Wallet },
+  "flota-vehicular": { from: Warehouse, to: CarFront },
+  reporteria: { from: FileChartColumnIncreasing, to: ChartColumnIncreasing },
 };
 
 // ICONOS MORPH ADMIN

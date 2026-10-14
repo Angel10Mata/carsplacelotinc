@@ -8,14 +8,10 @@ import { getModuleBackHref } from "@/lib/module-back-href";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
 const SEGMENT_LABELS: Record<string, string> = {
-  "farmamuni": "FarmaMuni",
+  TheCarsPlace: "Cars Place Lot",
+  "flota-vehicular": "Flota Vehicular",
+  reporteria: "Reportería",
   admin: "Administración",
-  ventas: "Ventas",
-  clientes: "Clientes",
-  inventario: "Inventario",
-  proveedores: "Proveedores",
-  finanzas: "Finanzas",
-  creditos: "Créditos",
   usuarios: "Gestión de Usuarios",
   configuraciones: "Configuraciones",
   perfil: "Mi Perfil",

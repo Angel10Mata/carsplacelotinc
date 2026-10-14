@@ -9,12 +9,22 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/farmacia-la-salud",
-        destination: "/farmamuni",
+        destination: "/TheCarsPlace",
         permanent: true,
       },
       {
         source: "/farmacia-la-salud/:path*",
-        destination: "/farmamuni/:path*",
+        destination: "/TheCarsPlace/:path*",
+        permanent: true,
+      },
+      {
+        source: "/farmamuni",
+        destination: "/TheCarsPlace",
+        permanent: true,
+      },
+      {
+        source: "/farmamuni/:path*",
+        destination: "/TheCarsPlace/:path*",
         permanent: true,
       },
     ];

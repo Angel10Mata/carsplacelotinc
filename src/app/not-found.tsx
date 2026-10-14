@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { ArrowLeft as ArrowLeftNode } from "lucide";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
+import { APP_BASE_PATH, APP_NAME } from "@/lib/app-config";
 
 // Página 404
 export default function NotFound() {
@@ -20,9 +21,9 @@ export default function NotFound() {
         </h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Lo sentimos, la ruta que intenta consultar no existe en el sistema de{" "}
-          <strong>FarmaMuni</strong>
+          <strong>{APP_NAME}</strong>
         </p>
-        <Link href="/farmamuni" className="inline-flex w-full justify-center">
+        <Link href={APP_BASE_PATH} className="inline-flex w-full justify-center">
           <SigetActionButton
             label="Regresar"
             accentColor={sigetAccent.abrir}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { APP_BASE_PATH } from "@/lib/app-config";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -15,7 +16,7 @@ export default function SinAccesoContent() {
   if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 text-foreground text-center">
+    <div className="flex w-full items-center justify-center p-4 text-foreground text-center">
       <div className="max-w-md w-full bg-card border border-border rounded-2xl p-10 shadow-2xl">
         <div className="mb-8 flex justify-center">
           <div className="p-6 bg-red-500/10 rounded-full animate-pulse">
@@ -37,7 +38,7 @@ export default function SinAccesoContent() {
         </div>
 
         <Link
-          href="/farmamuni"
+          href={APP_BASE_PATH}
           className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-xl font-bold text-xs transition-all active:scale-95 uppercase"
         >
           <ArrowLeft className="size-4 stroke-3" />

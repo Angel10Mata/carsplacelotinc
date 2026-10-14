@@ -1,6 +1,7 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { APP_BASE_PATH } from "@/lib/app-config";
 
 // RESOLUCIÓN Y ROLES ADMIN
 
@@ -43,7 +44,7 @@ export async function requireAdminPageAccess() {
 
   const role = await resolveUserRole(supabase, user);
   if (!isAdminRole(role)) {
-    redirect("/farmamuni");
+    redirect(APP_BASE_PATH);
   }
 
   return { supabase, user, role };

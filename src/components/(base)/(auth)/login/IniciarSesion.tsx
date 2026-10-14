@@ -1,21 +1,29 @@
 "use client";
 
-import { useState, useEffect, useActionState } from "react";
+import { useState, useEffect, useActionState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { login, getPublicAppSettings, type ActionState } from "./actions";
 import { getPasskeyOptions, verifyPasskey } from "./passkeys/passkeys-actions";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { MagicCard } from "@/components/ui/magic-card";
-import { Eye, EyeOff, ArrowBigUpDash } from "lucide-react";
-import { LogIn as LogInIcon, ArrowRight, Fingerprint, ScanFace } from "lucide";
+import {
+  Eye,
+  EyeOff,
+  Fingerprint,
+  ScanFace,
+  KeyRound,
+  User,
+  ArrowBigUpDash,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuroraText } from "@/components/ui/aurora-text";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
-import { toast } from "react-toastify";
+import { useTheme } from "next-themes";
+import Swal from "sweetalert2";
+import AppLogoLogin from "@/components/(base)/brand/AppLogoLogin";
+import { APP_BASE_PATH } from "@/lib/app-config";
 
-// Login
 export default function IniciarSesion() {
-  // Estado
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
@@ -25,6 +33,7 @@ export default function IniciarSesion() {
   const [isPasskeysEnabled, setIsPasskeysEnabled] = useState<boolean>(false);
   const [isCapsLockOn, setIsCapsLockOn] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const { theme } = useTheme();
 
   const handleKeyUpDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     setIsCapsLockOn(e.getModifierState("CapsLock"));
@@ -35,9 +44,26 @@ export default function IniciarSesion() {
     null,
   );
 
-  const showError = (message: string) => {
-    toast.error(message);
-  };
+  const showError = useCallback(
+    (message: string) => {
+      const isDark = theme === "dark";
+      Swal.fire({
+        icon: "error",
+        title: "Error de Acceso",
+        text: message,
+        background: isDark ? "#09090b" : "#ffffff",
+        color: isDark ? "#ffffff" : "#09090b",
+        confirmButtonColor: "#ea580c",
+        customClass: {
+          popup: cn(
+            "rounded-3xl border backdrop-blur-xl transition-colors duration-300",
+            isDark ? "border-white/10 shadow-2xl" : "border-black/10 shadow-lg",
+          ),
+        },
+      });
+    },
+    [theme],
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -57,7 +83,7 @@ export default function IniciarSesion() {
 
   useEffect(() => {
     if (state?.success) {
-      window.location.href = "/farmamuni";
+      window.location.href = APP_BASE_PATH;
     } else if (state?.message === "DEVICE_LIMIT") {
       window.location.href = "/esperando-acceso?reason=limit";
     } else if (state?.message === "DEVICE_PENDING") {
@@ -65,8 +91,7 @@ export default function IniciarSesion() {
     } else if (state?.message) {
       showError(state.message);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [state, showError]);
 
   const handlePasskeyLogin = async () => {
     setIsPasskeyPending(true);
@@ -77,7 +102,7 @@ export default function IniciarSesion() {
 
       if (verification.success) {
         localStorage.setItem("cermad-device-passkey-enabled", "true");
-        window.location.href = "/farmamuni";
+        window.location.href = APP_BASE_PATH;
       } else if (verification.error === "DEVICE_LIMIT") {
         window.location.href = "/esperando-acceso?reason=limit";
       } else if (verification.error === "DEVICE_PENDING") {
@@ -105,16 +130,24 @@ export default function IniciarSesion() {
   if (!mounted) return null;
 
   return (
-    <div className="relative flex-1 flex flex-col items-center justify-center w-full bg-transparent z-0 overflow-hidden">
-      <div className="relative w-full max-w-md px-6 md:px-12 pb-12 z-10">
-        <MagicCard className="rounded-3xl border border-[#C1D1C5]/40 dark:border-[#525D53]/50 bg-white/40 dark:bg-[#1a1d1a]/95 backdrop-blur-xl shadow-2xl overflow-visible!">
-          <div className="flex flex-col items-center space-y-6 p-10 border-b border-border/50 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: [0.25, 1, 0.5, 1] }}
+      className="relative w-full max-w-lg md:max-w-xl px-6 md:px-12 pb-12 mx-auto"
+    >
+        <MagicCard className="rounded-3xl border border-border/50 bg-card/40 backdrop-blur-xl shadow-2xl overflow-visible!">
+          <div className="flex flex-col items-center space-y-5 p-10 border-b border-border/50 text-center">
+            <div className="w-full">
+              <AppLogoLogin />
+            </div>
+
             <div className="space-y-1">
-              <h3 className="text-2xl font-black tracking-tight">
+              <h3 className="text-2xl font-bold tracking-tight">
                 <AuroraText>Bienvenido de nuevo</AuroraText>
               </h3>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em]">
-                FarmaMuni
+                KORE AUTHENTICATION SYSTEM
               </p>
             </div>
           </div>
@@ -160,7 +193,7 @@ export default function IniciarSesion() {
                       placeholder="Tu usuario"
                       required={showCredentials}
                       value={username}
-                      className="flex h-10 w-full rounded-lg border border-input bg-background/50 px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                      className="flex h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_transparent] [&:-webkit-autofill]:[-webkit-text-fill-color:inherit]"
                       onChange={(e) =>
                         setUsername(e.target.value.toLowerCase().trim())
                       }
@@ -200,7 +233,7 @@ export default function IniciarSesion() {
                         onKeyDown={handleKeyUpDown}
                         onKeyUp={handleKeyUpDown}
                         className={cn(
-                          "flex h-10 w-full rounded-lg border border-input bg-background/50 py-2 text-sm pr-10 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
+                          "flex h-10 w-full rounded-lg border border-input bg-transparent py-2 text-sm pr-10 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_transparent] [&:-webkit-autofill]:[-webkit-text-fill-color:inherit]",
                           isCapsLockOn ? "pl-9" : "pl-3",
                         )}
                         placeholder="••••••••"
@@ -222,29 +255,26 @@ export default function IniciarSesion() {
               </div>
 
               <div className="flex flex-col gap-4">
-                {showCredentials ? (
-                  <SigetActionButton
-                    label="Entrar"
-                    accentColor={sigetAccent.guardar}
-                    morphFrom={LogInIcon}
-                    morphTo={ArrowRight}
-                    type="submit"
-                    disabled={isPending || isPasskeyPending}
-                    ariaBusy={isPending}
-                    className="w-full"
-                  />
-                ) : (
-                  <SigetActionButton
-                    label="Ingresar"
-                    accentColor={sigetAccent.guardar}
-                    morphFrom={LogInIcon}
-                    morphTo={ArrowRight}
-                    onClick={() => setShowCredentials(true)}
-                    disabled={isPasskeyPending}
-                    className="w-full"
-                  />
-                )}
-
+                <button
+                  type={showCredentials ? "submit" : "button"}
+                  onClick={(e) => {
+                    if (!showCredentials) {
+                      e.preventDefault();
+                      setShowCredentials(true);
+                    }
+                  }}
+                  className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all duration-300 bg-secondary hover:bg-secondary/90 hover:border-border/80 hover:shadow-md border border-border text-secondary-foreground cursor-pointer active:scale-[0.98] disabled:opacity-50"
+                  disabled={showCredentials && (isPending || isPasskeyPending)}
+                >
+                  <User className="size-4 text-secondary-foreground/70" />
+                  <span>
+                    {!showCredentials
+                      ? "Iniciar sesión con contraseña"
+                      : isPending
+                        ? "Verificando..."
+                        : "Entrar ahora"}
+                  </span>
+                </button>
                 {isPasskeysEnabled && (
                   <>
                     <div className="relative my-2">
@@ -258,23 +288,40 @@ export default function IniciarSesion() {
                       </div>
                     </div>
 
-                    <SigetActionButton
-                      label={isPasskeyPending ? "Esperando" : "Biometría"}
-                      accentColor={sigetAccent.abrir}
-                      morphFrom={Fingerprint}
-                      morphTo={ScanFace}
+                    <button
+                      type="button"
                       onClick={handlePasskeyLogin}
+                      className="w-full py-5 flex flex-col items-center justify-center gap-3 rounded-xl transition-all duration-300 bg-secondary hover:bg-secondary/90 hover:border-border/80 hover:shadow-md border border-border text-secondary-foreground cursor-pointer active:scale-[0.98] disabled:opacity-50"
                       disabled={isPending || isPasskeyPending}
-                      ariaBusy={isPasskeyPending}
-                      className="w-full"
-                    />
+                    >
+                      {isPasskeyPending ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="size-6 rounded-full border-2 border-secondary-foreground/30 border-t-secondary-foreground animate-spin" />
+                          <span className="text-sm font-bold">
+                            Esperando dispositivo...
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-[15px] font-bold">
+                            Ingreso Seguro
+                          </span>
+                          <div className="flex items-center gap-4">
+                            <Fingerprint className="size-6 text-secondary-foreground/70" />
+                            <div className="w-px h-5 bg-border" />
+                            <ScanFace className="size-6 text-secondary-foreground/70" />
+                            <div className="w-px h-5 bg-border" />
+                            <KeyRound className="size-6 text-secondary-foreground/70" />
+                          </div>
+                        </>
+                      )}
+                    </button>
                   </>
                 )}
               </div>
             </form>
           )}
         </MagicCard>
-      </div>
-    </div>
+    </motion.div>
   );
 }

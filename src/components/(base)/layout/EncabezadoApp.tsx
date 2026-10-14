@@ -1,194 +1,167 @@
 "use client";
 
-// CABECERA FIJA Y MENÚ LATERAL
-
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { useDemoMode } from "@/components/(base)/providers/DemoModeProvider";
+import { motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import { useUser, useUserContext } from "@/components/(base)/providers/UserProvider";
 import { cn } from "@/lib/utils";
-import { FlaskConical } from "lucide-react";
-import { MorphIconBox } from "@/components/ui/morph-hover-icon";
-import { navIconColors, navMorphIcons } from "@/lib/morph-icons";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { BreadcrumbNav } from "@/components/ui/breadcrumb-nav";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { MorphHoverIcon } from "@/components/ui/morph-hover-icon";
+import { navMorphIcons } from "@/lib/morph-icons";
 import Menu from "./Menu";
-import { getPendingDevicesCount } from "@/components/(Kore)/admin/lib/actions";
+import { getPendingDevicesCount } from "@/components/(base)/admin/lib/actions";
 import { createPortal } from "react-dom";
-import AnimacionLogoKore from "@/components/(Kore)/logo/AnimacionLogoKore";
-
-// COMPONENTE PRINCIPAL
+import AnimacionLogo from "@/components/(base)/brand/AnimacionLogo";
+import { HeaderBrand } from "@/components/(base)/brand/HeaderBrand";
 
 export default function EncabezadoApp() {
   const user = useUser();
   const { effectiveRole } = useUserContext();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
   const [isOpen, setIsOpen] = useState(false);
   const [pendingDevices, setPendingDevices] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [refreshSpinning, setRefreshSpinning] = useState(false);
+  const [refreshRotation, setRefreshRotation] = useState(0);
   const pathname = usePathname();
-  const isRoot = pathname === "/farmamuni";
-  const canSimulate = ["super", "admin"].includes(effectiveRole);
-  const canManage = canSimulate;
+  const isLoginPage = pathname === "/" || pathname === "/login";
+  const showBreadcrumb = Boolean(user) && !isLoginPage;
+  const showHamburger = Boolean(user);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const canManage = ["super", "admin"].includes(effectiveRole);
 
   useEffect(() => {
-    const init = async () => {
-      setMounted(true);
-      if (!canManage) return;
-      const c = await getPendingDevicesCount();
-      setPendingDevices(c ?? 0);
-    };
-    init();
+    setMounted(true);
+    if (!canManage) return;
+    getPendingDevicesCount()
+      .then((c) => setPendingDevices(c ?? 0))
+      .catch(() => setPendingDevices(0));
   }, [canManage]);
 
-  const handleLogoClick = (e: React.MouseEvent) => {
-    // Prevent default navigation to show the animation instead
-    e.preventDefault();
-    setIsFullScreen(true);
+  useLayoutEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const sync = () => {
+      document.documentElement.style.setProperty(
+        "--app-header-height",
+        `${header.offsetHeight}px`,
+      );
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--app-header-height");
+    };
+  }, [showBreadcrumb, pathname]);
+
+  const handleRefresh = () => {
+    if (refreshSpinning) return;
+    setRefreshSpinning(true);
+    setRefreshRotation((rotation) => rotation + 360);
   };
 
   return (
     <>
-      <header className="w-full fixed top-0 left-0 transition-all bg-white dark:bg-[#171a17] border-b border-[#C1D1C5]/30 dark:border-[#525D53]/50 z-[100] shadow-sm">
-        <div className="mx-auto flex h-14 md:h-16 items-center justify-between px-4 md:px-8 gap-4">
-          <div className="flex items-center h-full">
-            <div className="flex items-center shrink-0">
-              <Link
-                href={user ? "/farmamuni" : "/"}
-                onClick={handleLogoClick}
-                className="flex flex-row items-center shrink-0 group gap-1 md:gap-1.5 cursor-pointer"
-              >
-                <motion.img 
-                  src="/farmamuni/logo.png"
-                  alt="FarmaMuni"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="h-16 md:h-20 w-16 md:w-20 object-contain transition-transform duration-300 group-hover:scale-105 origin-left"
-                />
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                  className="flex flex-col leading-none"
-                >
-                  <span className="text-[11px] sm:text-[15px] md:text-[17px] font-black uppercase tracking-tight text-[#1a6aa5] dark:text-[#4da8da]">Farma</span>
-                  <span className="text-[11px] sm:text-[15px] md:text-[17px] font-black uppercase tracking-tight text-[#4caf50] dark:text-[#66bb6a]">Muni</span>
-                </motion.span>
-              </Link>
-            </div>
-            {user && (
-              <div className="hidden md:flex ml-4 md:ml-6 border-l border-border/30 h-10 items-center pl-4 md:pl-6">
-                <BreadcrumbNav />
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <AnimatedThemeToggler />
-            {canSimulate && (
-              <button
-                type="button"
-                onClick={toggleDemoMode}
-                title={isDemoMode ? "Desactivar simulación de datos" : "Simular datos de ejemplo"}
-                className={cn(
-                  "flex items-center justify-center rounded-lg p-1.5 transition-colors cursor-pointer active:scale-95",
-                  isDemoMode
-                    ? "bg-violet-500/20 text-violet-500 dark:text-violet-300"
-                    : "text-black hover:text-violet-600 dark:text-white dark:hover:text-violet-300",
-                )}
-              >
-                <FlaskConical className="size-5" />
-              </button>
-            )}
+      <header
+        ref={headerRef}
+        className="relative z-[100] w-full shrink-0 border-b border-border/40 bg-zinc-100 shadow-sm transition-all dark:bg-zinc-800"
+      >
+        <div className="mx-auto flex min-h-[var(--header-row-height)] flex-col px-1 py-1 md:px-2.5">
+          <div className="flex w-full items-center justify-between gap-2 py-2.5 md:py-0">
             <button
-              id="refresh-btn"
-              onClick={() => window.location.reload()}
-              className="flex items-center justify-center text-black hover:text-celeste-kore dark:text-white dark:hover:text-celeste-kore cursor-pointer transition-colors active:scale-95"
+              type="button"
+              onClick={() => setIsFullScreen(true)}
+              className="flex min-w-0 cursor-pointer items-center transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <MorphIconBox
-                from={navMorphIcons.refresh.from}
-                to={navMorphIcons.refresh.to}
-                size={26}
-                color={navIconColors.brandBright}
-                strokeWidth={2}
-                spring="snappy"
-                padding="xs"
-                boxClassName="border-0 bg-transparent"
-              />
-            </button>
-            <div className="relative ml-2">
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center text-foreground hover:text-foreground/80 cursor-pointer transition-all active:scale-95"
+              <motion.span
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="block"
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  {isOpen ? (
-                    <motion.div
-                      key="close"
-                      initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
-                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                      exit={{ opacity: 0, rotate: 90, scale: 0.8 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <MorphIconBox
-                        from={navMorphIcons.close.from}
-                        to={navMorphIcons.close.to}
-                        size={32}
-                        color={navIconColors.danger}
-                        strokeWidth={2}
-                        spring="snappy"
-                        padding="xs"
-                        boxClassName="border-0 bg-transparent"
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="menu"
-                      initial={{ opacity: 0, rotate: 90, scale: 0.8 }}
-                      animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                      exit={{ opacity: 0, rotate: -90, scale: 0.8 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <MorphIconBox
-                        from={navMorphIcons.menu.from}
-                        to={navMorphIcons.menu.to}
-                        size={32}
-                        color={navIconColors.brand}
-                        strokeWidth={2}
-                        spring="snappy"
-                        padding="xs"
-                        boxClassName="border-0 bg-transparent"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                <HeaderBrand compact />
+              </motion.span>
+            </button>
+
+            <div className="flex shrink-0 items-center gap-2.5 md:gap-4">
+              <AnimatedThemeToggler />
+              <button
+                id="refresh-btn"
+                type="button"
+                onClick={handleRefresh}
+                onMouseEnter={() => {
+                  if (!refreshSpinning) setRefreshRotation(90);
+                }}
+                onMouseLeave={() => {
+                  if (!refreshSpinning) setRefreshRotation(0);
+                }}
+                className="flex cursor-pointer items-center justify-center text-[#dc2626] transition-colors hover:text-[#ef4444] active:scale-95 dark:text-[#ef4444] dark:hover:text-[#ff0000]"
+              >
+                <motion.span
+                  animate={{ rotate: refreshRotation }}
+                  transition={{
+                    duration: refreshSpinning ? 0.55 : 0.25,
+                    ease: refreshSpinning ? "easeInOut" : "easeOut",
+                  }}
+                  onAnimationComplete={() => {
+                    if (refreshSpinning) window.location.reload();
+                  }}
+                  className="inline-flex"
+                >
+                  <RefreshCw size={24} strokeWidth={2.25} />
+                </motion.span>
               </button>
-              {!isOpen && canManage && pendingDevices > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-celeste-kore text-[10px] font-bold text-white animate-pulse pointer-events-none">
-                  {pendingDevices}
-                </span>
+              {showHamburger && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex cursor-pointer items-center justify-center text-foreground transition-colors active:scale-95 hover:text-foreground/80"
+                  >
+                    <MorphHoverIcon
+                      from={navMorphIcons.menu.from}
+                      to={navMorphIcons.close.from}
+                      hovered={isOpen}
+                      size={28}
+                      color="currentColor"
+                      spring="snappy"
+                      className="md:scale-[1.14]"
+                    />
+                  </button>
+                  {!isOpen && canManage && pendingDevices > 0 && (
+                    <span className="pointer-events-none absolute -top-1.5 -right-1.5 flex h-[18px] min-w-[18px] animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+                      {pendingDevices}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
+
+          {showBreadcrumb ? (
+            <div className="min-w-0 w-full px-1 py-2.5 md:py-0 md:pb-0.5 md:pt-0.5">
+              <BreadcrumbNav />
+            </div>
+          ) : null}
         </div>
       </header>
 
-      {user && !isRoot && (
-        <div className="fixed top-14 left-0 md:hidden w-full px-6 py-3 border-b border-border/40 bg-white dark:bg-background z-[99]">
-          <BreadcrumbNav />
-        </div>
+      {showHamburger && (
+        <Menu isOpen={isOpen} setIsOpen={setIsOpen} user={user} />
       )}
 
-      <Menu isOpen={isOpen} setIsOpen={setIsOpen} user={user} />
-
-      {mounted && createPortal(
-        <AnimacionLogoKore isOpen={isFullScreen} onClose={() => setIsFullScreen(false)} />,
-        document.body
-      )}
+      {mounted &&
+        createPortal(
+          <AnimacionLogo
+            isOpen={isFullScreen}
+            onClose={() => setIsFullScreen(false)}
+          />,
+          document.body,
+        )}
     </>
   );
 }

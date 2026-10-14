@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/farmamuni/', '/api/', '/login'],
+      disallow: ["/TheCarsPlace/", "/farmamuni/", "/api/", "/login"],
     },
   }
 }

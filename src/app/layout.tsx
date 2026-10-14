@@ -7,10 +7,9 @@ import EncabezadoApp from "@/components/(base)/layout/EncabezadoApp";
 import { createClient } from "@/utils/supabase/server";
 import Providers from "@/components/(base)/providers/QueryProviders";
 import { UserProvider } from "@/components/(base)/providers/UserProvider";
-import { DemoModeProvider } from "@/components/(base)/providers/DemoModeProvider";
-import DemoModeBanner from "@/components/(base)/layout/DemoModeBanner";
 import OfflineBanner from "@/components/OfflineBanner";
 import ObsToastContainer from "@/components/(base)/layout/ObsToastContainer";
+import { APP_LOGO_PATH, APP_NAME } from "@/lib/app-config";
 
 // Fuentes y metadatos de la app
 
@@ -33,19 +32,19 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "FarmaMuni",
-  description: "Sistema Integral de Gestión - FarmaMuni",
+  title: "Cars Place Lot",
+  description: "The Car Place Lot Inc — gestión vehicular",
   other: {
     google: "notranslate",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "FarmaMuni",
+    title: "Cars Place Lot",
   },
   icons: {
-    icon: "/farmamuni/logo.png",
-    apple: "/farmamuni/logo.png",
+    icon: APP_LOGO_PATH,
+    apple: APP_LOGO_PATH,
   },
 };
 
@@ -73,7 +72,7 @@ export default async function RootLayout({
           paddingTop: "var(--banner-height, 0px)",
           transition: "padding-top 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background flex flex-col relative`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased min-h-screen bg-background flex flex-col relative`}
       >
 
         <Providers>
@@ -83,15 +82,12 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <UserProvider user={user}>
-              <DemoModeProvider>
-                <OfflineBanner />
-                <DemoModeBanner />
-                <EncabezadoApp />
-                <main className="flex-1 w-full flex flex-col">
-                  {children}
-                </main>
-                <ObsToastContainer />
-              </DemoModeProvider>
+              <OfflineBanner />
+              <EncabezadoApp />
+              <main className="flex-1 w-full flex flex-col">
+                {children}
+              </main>
+              <ObsToastContainer />
             </UserProvider>
           </ThemeProvider>
         </Providers>

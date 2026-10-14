@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAppSettings, useUpdateAppSettings } from "./hooks";
 import { Shield, Key, Loader2 } from "lucide-react";
-import LogoKore from "@/components/(Kore)/logo/LogoKore";
+import { AppLogo } from "@/components/(base)/brand/AppLogo";
 import { Card } from "@/components/ui/card";
 import { modulePageCenteredClass } from "@/lib/module-layout";
 import { ModuleHeaderBackButton } from "@/components/(base)/layout/ModuleHeaderBackButton";
@@ -65,7 +65,7 @@ const handleAuthChange = (checked: boolean) => {
     <div className={modulePageCenteredClass}>
       {/* LOGO CENTRADO */}
       <div className="w-full flex justify-center mb-4">
-        <LogoKore scale={0.7} backgroundEffect="none" />
+        <AppLogo size={140} />
       </div>
 
       <div className="flex flex-col gap-1 w-full text-center items-center">

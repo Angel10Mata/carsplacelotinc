@@ -1,26 +1,25 @@
 import { MetadataRoute } from "next";
+import { APP_BASE_PATH, APP_LOGO_PATH, APP_NAME } from "@/lib/app-config";
 
-// App instalable (PWA)
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "FarmaMuni",
-    short_name: "FarmaMuni",
-    description:
-      "Sistema de Gestión FarmaMuni para la optimización de operaciones y mejora de la eficiencia.",
-    start_url: "/farmamuni",
+    name: APP_NAME,
+    short_name: "TCPL",
+    description: "The Car Place Lot Inc — gestión vehicular",
+    start_url: APP_BASE_PATH,
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
     theme_color: "#000000",
     icons: [
       {
-        src: "/farmamuni/logo.png",
+        src: APP_LOGO_PATH,
         sizes: "64x64 192x192 512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/farmamuni/logo.png",
+        src: APP_LOGO_PATH,
         sizes: "64x64 192x192 512x512",
         type: "image/png",
         purpose: "maskable",

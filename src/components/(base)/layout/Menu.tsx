@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, FlaskConical, Shield } from "lucide-react";
+import { ChevronDown, Shield } from "lucide-react";
 import Swal from "sweetalert2";
 import VerPerfil from "@/components/(base)/(users)/profile/VerPerfil";
 import { useProfile } from "@/components/(base)/(users)/profile/lib/hooks";
@@ -12,14 +12,15 @@ import ModalPasskeys from "@/components/(base)/layout/modals/ModalPasskeys";
 import { MorphIconBox } from "@/components/ui/morph-hover-icon";
 import { AuroraText } from "@/components/ui/aurora-text";
 import { PushNotificationToggle } from "@/components/ui/PushNotificationToggle";
-import { useDemoMode } from "@/components/(base)/providers/DemoModeProvider";
 import { useUserContext } from "@/components/(base)/providers/UserProvider";
 import { ADMIN_MENU_ITEMS, APP_MODULES } from "@/lib/app-modules";
+import { APP_BASE_PATH, APP_NAME } from "@/lib/app-config";
 import {
   adminIconColors,
   adminMorphIcons,
   moduleIconColors,
   moduleMorphIcons,
+  navIconBoxClass,
   navIconColors,
   navMorphIcons,
 } from "@/lib/morph-icons";
@@ -38,17 +39,28 @@ interface MenuProps {
 
 function MenuSectionLabel({
   dotClass,
+  labelClass,
   children,
 }: {
   dotClass: string;
+  labelClass?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 mb-3">
+    <div className="flex items-center gap-2 px-1 mb-3 min-w-0">
       <span className={cn("size-2 rounded-full shrink-0", dotClass)} />
-      <span className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-400">
+      <span
+        className={cn(
+          "text-[10px] font-black uppercase tracking-[0.22em] shrink-0",
+          labelClass ?? "text-zinc-500 dark:text-zinc-400",
+        )}
+      >
         {children}
       </span>
+      <span
+        className="h-px min-w-6 flex-1 bg-zinc-200 dark:bg-zinc-700"
+        aria-hidden
+      />
     </div>
   );
 }
@@ -57,12 +69,30 @@ function MenuAccordionChevron({ open }: { open: boolean }) {
   return (
     <ChevronDown
       className={cn(
-        "size-4 text-zinc-500 transition-transform duration-200 shrink-0",
+        "size-4 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 shrink-0",
         open && "rotate-180",
       )}
     />
   );
 }
+
+const MENU_ICON_MAIN = {
+  size: 20,
+  strokeWidth: 2.25,
+  padding: "sm" as const,
+};
+
+const MENU_ICON_SUB = {
+  size: 18,
+  strokeWidth: 2.25,
+  padding: "xs" as const,
+};
+
+const menuWhiteCard =
+  "rounded-2xl border border-zinc-200/90 bg-white shadow-sm overflow-hidden dark:border-zinc-700 dark:bg-zinc-900";
+
+const menuRowHover =
+  "hover:bg-zinc-50/90 dark:hover:bg-zinc-800/55 transition-colors";
 
 // MENÚ LATERAL
 
@@ -70,7 +100,6 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
   const pathname = usePathname();
   const { realRole, effectiveRole, simulatedRole, setSimulatedRole } =
     useUserContext();
-  const { isDemoMode, setDemoMode } = useDemoMode();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPasskeysOpen, setIsPasskeysOpen] = useState(false);
   const [modulosOpen, setModulosOpen] = useState(true);
@@ -78,12 +107,13 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
   const [adminOpen, setAdminOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
 
-  const isRoot = pathname === "/farmamuni";
+  const isRoot =
+    pathname === APP_BASE_PATH || pathname === `${APP_BASE_PATH}/`;
   const isSuperOrAdmin = ["super", "admin"].includes(effectiveRole);
-  const mobileTop = isRoot ? "top-14" : "top-[6.5rem]";
-  const mobileHeight = isRoot
-    ? "h-[calc(100vh-3.5rem)]"
-    : "h-[calc(100vh-6.5rem)]";
+  const menuTop =
+    "top-[calc(var(--banner-height,0px)+var(--app-header-height,var(--header-row-height)))]";
+  const menuHeight =
+    "h-[calc(100dvh-var(--banner-height,0px)-var(--app-header-height,var(--header-row-height)))]";
 
   const metadata = user?.user_metadata || {};
   const username =
@@ -141,147 +171,190 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          aria-hidden={!isOpen}
           onClick={closeMenu}
+          className={cn(
+            "fixed right-0 bottom-0 left-0 z-[105] cursor-pointer bg-black/40 backdrop-blur-[2px]",
+            menuTop,
+            isOpen ? "pointer-events-auto" : "pointer-events-none",
+          )}
         />
       )}
 
       <aside
         className={cn(
-          `fixed right-0 ${mobileTop} md:top-16 z-50 ${mobileHeight} md:h-[calc(100vh-4rem)] w-full sm:w-100 bg-zinc-950 border-l border-zinc-800 transition-transform duration-500 overflow-y-auto shadow-2xl flex flex-col text-zinc-100`,
-          isOpen ? "translate-x-0" : "translate-x-full",
+          "fixed right-0 z-[110] pointer-events-auto w-full sm:w-100 bg-zinc-100 dark:bg-zinc-800 border-l border-border/50 transition-transform duration-500 overflow-y-auto flex flex-col text-foreground",
+          menuTop,
+          menuHeight,
+          isOpen ? "translate-x-0" : "translate-x-full pointer-events-none",
         )}
       >
-        <div className="flex items-center justify-between px-5 pt-5 pb-4">
-          {user ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="inline-flex items-center gap-2 text-sm font-bold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-            >
-              <MorphIconBox
-                from={navMorphIcons.logOut.from}
-                to={navMorphIcons.logOut.to}
-                size={16}
-                color="#f87171"
-                strokeWidth={2}
-                spring="snappy"
-                padding="xs"
-                boxClassName="border-0 bg-transparent"
-              />
-              Cerrar Sesión
-            </button>
-          ) : (
-            <div />
-          )}
-          <PushNotificationToggle />
-        </div>
+        {user ? (
+          <div className="shrink-0 border-b border-border/40 bg-zinc-100 dark:bg-zinc-800">
+            <div className="flex w-full items-center justify-between gap-3 px-5 py-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 text-sm font-bold text-red-500 hover:text-red-600 dark:text-red-400 transition-colors cursor-pointer"
+              >
+                <MorphIconBox
+                  from={navMorphIcons.logOut.from}
+                  to={navMorphIcons.logOut.to}
+                  size={18}
+                  color="#ef4444"
+                  strokeWidth={2.25}
+                  spring="snappy"
+                  padding="xs"
+                  boxClassName={cn("shrink-0", navIconBoxClass.menuTileSub)}
+                />
+                Cerrar Sesión
+              </button>
+              <PushNotificationToggle />
+            </div>
 
-        <div className="flex flex-col flex-1 px-5 pb-6 gap-6">
-          {user ? (
-            <>
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-500 mb-1">
+            <div className="px-5 pb-5">
+              <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Usuario
                     </p>
-                    <p className="text-sm font-bold text-[#6f9fd4] truncate">
+                    <p className="font-bold leading-tight text-celeste-trifinio truncate">
                       {username}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-500 mb-1">
+                  <div className="min-w-0 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Rol
                     </p>
-                    <p className="text-sm font-bold text-[#6f9fd4] uppercase">
+                    <p className="font-bold leading-tight text-celeste-trifinio uppercase truncate">
                       {effectiveRole}
                     </p>
                   </div>
-                </div>
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-500 mb-1">
-                    Nombre
-                  </p>
-                  <p className="text-base font-bold text-white truncate">
-                    {displayName}
-                  </p>
-                </div>
-              </div>
-
-              <section>
-                <MenuSectionLabel dotClass="bg-[#2E9BD0]">Inicio</MenuSectionLabel>
-                <Link
-                  href="/farmamuni"
-                  onClick={closeMenu}
-                  className={cn(
-                    "flex items-start gap-3 rounded-2xl border px-4 py-3.5 transition-colors",
-                    isRoot
-                      ? "border-[#2E9BD0]/50 bg-[#2c5f9b]/15 border-l-4 border-l-[#6f9fd4]"
-                      : "border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900",
-                  )}
-                >
-                  <MorphIconBox
-                    from={navMorphIcons.home.from}
-                    to={navMorphIcons.home.to}
-                    size={18}
-                    color={navIconColors.brandBright}
-                    strokeWidth={2}
-                    spring="snappy"
-                    padding="sm"
-                    boxClassName="border border-[#2c5f9b]/40 bg-[#2c5f9b]/20 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={cn(
-                        "text-sm font-black uppercase tracking-wide",
-                        isRoot ? "text-[#6f9fd4]" : "text-white",
-                      )}
-                    >
-                      Inicio
+                  <div className="col-span-2 min-w-0 border-t border-border/40 pt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Nombre
                     </p>
-                    <p className="text-xs text-zinc-500 mt-0.5 leading-snug">
-                      Panel principal y acceso a los módulos del sistema.
+                    <p className="font-bold leading-tight text-foreground truncate">
+                      {displayName}
                     </p>
                   </div>
-                </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex flex-col flex-1 px-4 py-6 pb-8 gap-6">
+          {user ? (
+            <>
+              <section>
+                <MenuSectionLabel
+                  dotClass="bg-[#2563EB]"
+                  labelClass="text-[#2563EB] dark:text-[#6f9fd4]"
+                >
+                  Inicio
+                </MenuSectionLabel>
+                {isRoot ? (
+                  <div className="rounded-2xl border border-sky-200/90 bg-white p-1.5 shadow-sm dark:border-sky-900/45 dark:bg-zinc-900">
+                    <Link
+                      href={APP_BASE_PATH}
+                      onClick={closeMenu}
+                      className="flex items-start gap-3 rounded-xl border border-sky-200/90 bg-sky-50/95 px-4 py-3.5 border-l-4 border-l-[#2563EB] dark:border-sky-800/50 dark:bg-sky-950/20 dark:border-l-[#6f9fd4]"
+                    >
+                      <MorphIconBox
+                        from={navMorphIcons.home.from}
+                        to={navMorphIcons.home.to}
+                        size={MENU_ICON_MAIN.size}
+                        color={navIconColors.brandBright}
+                        strokeWidth={MENU_ICON_MAIN.strokeWidth}
+                        spring="snappy"
+                        padding={MENU_ICON_MAIN.padding}
+                        boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black uppercase tracking-wide text-[#2563EB] dark:text-[#6f9fd4]">
+                          Inicio
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                          Panel principal y acceso a los módulos del sistema.
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                ) : (
+                  <Link
+                    href={APP_BASE_PATH}
+                    onClick={closeMenu}
+                    className={cn(
+                      menuWhiteCard,
+                      "flex items-start gap-3 px-4 py-3.5",
+                      menuRowHover,
+                    )}
+                  >
+                    <MorphIconBox
+                      from={navMorphIcons.home.from}
+                      to={navMorphIcons.home.to}
+                      size={MENU_ICON_MAIN.size}
+                      color={navIconColors.brandBright}
+                      strokeWidth={MENU_ICON_MAIN.strokeWidth}
+                      spring="snappy"
+                      padding={MENU_ICON_MAIN.padding}
+                      boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black uppercase tracking-wide text-foreground">
+                        Inicio
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                        Panel principal y acceso a los módulos del sistema.
+                      </p>
+                    </div>
+                  </Link>
+                )}
               </section>
 
               {visibleModules.length > 0 && (
                 <section>
-                  <MenuSectionLabel dotClass="bg-[#2563EB]">
+                  <MenuSectionLabel
+                    dotClass="bg-[#2563EB]"
+                    labelClass="text-[#2563EB] dark:text-[#6f9fd4]"
+                  >
                     Módulos
                   </MenuSectionLabel>
-                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+                  <div className={menuWhiteCard}>
                     <button
                       type="button"
                       onClick={() => setModulosOpen((v) => !v)}
-                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-zinc-900 transition-colors cursor-pointer"
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer",
+                        menuRowHover,
+                      )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <MorphIconBox
                           from={navMorphIcons.fallback.from}
                           to={navMorphIcons.fallback.to}
-                          size={18}
+                          size={MENU_ICON_MAIN.size}
                           color={navIconColors.brandBright}
-                          strokeWidth={2}
+                          strokeWidth={MENU_ICON_MAIN.strokeWidth}
                           spring="snappy"
-                          padding="sm"
-                          boxClassName="border border-zinc-700 bg-zinc-800 shrink-0"
+                          padding={MENU_ICON_MAIN.padding}
+                          boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
                         />
                         <div className="min-w-0">
-                          <p className="text-sm font-black uppercase tracking-wide text-white">
-                            FarmaMuni
+                          <p className="text-sm font-black uppercase tracking-wide text-foreground">
+                            {APP_NAME}
                           </p>
-                          <p className="text-xs text-zinc-500 truncate">
-                            Ventas, inventario, clientes y más.
+                          <p className="text-xs text-muted-foreground truncate">
+                            Módulos de negocio del sistema.
                           </p>
                         </div>
                       </div>
                       <MenuAccordionChevron open={modulosOpen} />
                     </button>
                     {modulosOpen && (
-                      <div className="border-t border-zinc-800/80">
+                      <div className="border-t border-zinc-200/90 dark:border-zinc-700/80">
                         {visibleModules.map((mod) => {
                           const pair = moduleMorphIcons[mod.id];
                           const palette = moduleIconColors[mod.id];
@@ -292,42 +365,45 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                               href={mod.href}
                               onClick={closeMenu}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-3 border-t border-zinc-800/60 first:border-t-0 transition-colors",
-                                active
-                                  ? "bg-[#2c5f9b]/15 border-l-4 border-l-[#6f9fd4]"
-                                  : "hover:bg-zinc-900/80",
+                                "flex items-center gap-3 px-4 py-3 border-t border-zinc-200/80 dark:border-zinc-700/70 first:border-t-0",
+                                menuRowHover,
+                                active &&
+                                  "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
                               )}
                             >
                               <MorphIconBox
                                 from={pair.from}
                                 to={pair.to}
-                                size={16}
+                                size={MENU_ICON_SUB.size}
                                 color={palette.color}
-                                strokeWidth={2}
+                                strokeWidth={MENU_ICON_SUB.strokeWidth}
                                 spring="snappy"
-                                padding="xs"
+                                padding={MENU_ICON_SUB.padding}
                                 boxClassName={cn(
                                   "border shrink-0",
                                   palette.boxClass,
                                 )}
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-white">
+                                <p className="text-sm font-bold text-foreground">
                                   {mod.title}
                                 </p>
-                                <p className="text-[11px] text-zinc-500 line-clamp-1">
+                                <p className="text-[11px] text-muted-foreground line-clamp-1">
                                   {mod.desc}
                                 </p>
                               </div>
                               <MorphIconBox
                                 from={navMorphIcons.chevronRight.from}
                                 to={navMorphIcons.chevronRight.to}
-                                size={14}
+                                size={16}
                                 color={navIconColors.brandBright}
                                 strokeWidth={2}
                                 spring="snappy"
                                 padding="xs"
-                                boxClassName="border-0 bg-transparent opacity-40 shrink-0"
+                                boxClassName={cn(
+                                  "shrink-0 opacity-70",
+                                  navIconBoxClass.menuTileSub,
+                                )}
                               />
                             </Link>
                           );
@@ -339,31 +415,37 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
               )}
 
               <section>
-                <MenuSectionLabel dotClass="bg-purple-500">
+                <MenuSectionLabel
+                  dotClass="bg-purple-500"
+                  labelClass="text-purple-600 dark:text-purple-400"
+                >
                   Mi Cuenta
                 </MenuSectionLabel>
-                <div className="rounded-2xl border border-purple-500/30 bg-purple-950/20 overflow-hidden">
+                <div className={cn(menuWhiteCard, "border-purple-200/70 dark:border-purple-500/25")}>
                   <button
                     type="button"
                     onClick={() => setCuentaOpen((v) => !v)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-purple-950/30 transition-colors cursor-pointer"
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer",
+                      menuRowHover,
+                    )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <MorphIconBox
                         from={navMorphIcons.user.from}
                         to={navMorphIcons.user.to}
-                        size={18}
+                        size={MENU_ICON_MAIN.size}
                         color="#A855F7"
-                        strokeWidth={2}
+                        strokeWidth={MENU_ICON_MAIN.strokeWidth}
                         spring="snappy"
-                        padding="sm"
-                        boxClassName="border border-purple-500/30 bg-purple-950/40 shrink-0"
+                        padding={MENU_ICON_MAIN.padding}
+                        boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
                       />
                       <div className="min-w-0">
-                        <p className="text-sm font-black uppercase tracking-wide text-white">
+                        <p className="text-sm font-black uppercase tracking-wide text-foreground">
                           Mi Perfil y Ajustes
                         </p>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-muted-foreground">
                           Opciones de cuenta y seguridad.
                         </p>
                       </div>
@@ -371,30 +453,33 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                     <MenuAccordionChevron open={cuentaOpen} />
                   </button>
                   {cuentaOpen && (
-                    <div className="border-t border-purple-500/20">
+                    <div className="border-t border-zinc-200/90 dark:border-zinc-700/80">
                       <button
                         type="button"
                         onClick={() => {
                           setIsProfileOpen(true);
                           closeMenu();
                         }}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-purple-950/30 transition-colors cursor-pointer"
+                        className={cn(
+                          "flex w-full items-center gap-3 px-4 py-3 text-left cursor-pointer",
+                          menuRowHover,
+                        )}
                       >
                         <MorphIconBox
                           from={navMorphIcons.user.from}
                           to={navMorphIcons.user.to}
-                          size={16}
+                          size={MENU_ICON_SUB.size}
                           color="#A855F7"
-                          strokeWidth={2}
+                          strokeWidth={MENU_ICON_SUB.strokeWidth}
                           spring="snappy"
-                          padding="xs"
-                          boxClassName="border-0 bg-transparent shrink-0"
+                          padding={MENU_ICON_SUB.padding}
+                          boxClassName={cn("shrink-0", navIconBoxClass.menuTileSub)}
                         />
                         <div>
-                          <p className="text-sm font-bold text-white">
+                          <p className="text-sm font-bold text-foreground">
                             Mi Perfil
                           </p>
-                          <p className="text-[11px] text-zinc-500">
+                          <p className="text-[11px] text-muted-foreground">
                             Datos personales y credenciales.
                           </p>
                         </div>
@@ -405,23 +490,26 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                           setIsPasskeysOpen(true);
                           closeMenu();
                         }}
-                        className="flex w-full items-center gap-3 px-4 py-3 border-t border-purple-500/20 text-left hover:bg-purple-950/30 transition-colors cursor-pointer"
+                        className={cn(
+                          "flex w-full items-center gap-3 px-4 py-3 border-t border-zinc-200/90 dark:border-zinc-700/80 text-left cursor-pointer",
+                          menuRowHover,
+                        )}
                       >
                         <MorphIconBox
                           from={navMorphIcons.fingerprint.from}
                           to={navMorphIcons.fingerprint.to}
-                          size={16}
+                          size={MENU_ICON_SUB.size}
                           color={navIconColors.success}
-                          strokeWidth={2}
+                          strokeWidth={MENU_ICON_SUB.strokeWidth}
                           spring="snappy"
-                          padding="xs"
-                          boxClassName="border-0 bg-transparent shrink-0"
+                          padding={MENU_ICON_SUB.padding}
+                          boxClassName={cn("shrink-0", navIconBoxClass.menuTileSub)}
                         />
                         <div>
-                          <p className="text-sm font-bold text-white">
+                          <p className="text-sm font-bold text-foreground">
                             Ingreso Seguro
                           </p>
-                          <p className="text-[11px] text-zinc-500">
+                          <p className="text-[11px] text-muted-foreground">
                             Passkeys y acceso sin contraseña.
                           </p>
                         </div>
@@ -433,64 +521,70 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
 
               {isSuperOrAdmin && (
                 <section>
-                  <MenuSectionLabel dotClass="bg-cyan-400">
+                  <MenuSectionLabel
+                    dotClass="bg-[#2E9BD0]"
+                    labelClass="text-[#2c5f9b] dark:text-[#6f9fd4]"
+                  >
                     Administración
                   </MenuSectionLabel>
-                  <div className="rounded-2xl border border-[#2E9BD0]/40 bg-[#2c5f9b]/10 overflow-hidden">
+                  <div className={cn(menuWhiteCard, "border-[#2c5f9b]/20 dark:border-[#2E9BD0]/30")}>
                     <button
                       type="button"
                       onClick={() => setAdminOpen((v) => !v)}
-                      className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-[#2c5f9b]/20 transition-colors cursor-pointer"
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer",
+                        menuRowHover,
+                      )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <MorphIconBox
                           from={navMorphIcons.settings.from}
                           to={navMorphIcons.settings.to}
-                          size={18}
+                          size={MENU_ICON_MAIN.size}
                           color={navIconColors.brandBright}
-                          strokeWidth={2}
+                          strokeWidth={MENU_ICON_MAIN.strokeWidth}
                           spring="snappy"
-                          padding="sm"
-                          boxClassName="border border-[#2c5f9b]/40 bg-[#2c5f9b]/25 shrink-0"
+                          padding={MENU_ICON_MAIN.padding}
+                          boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
                         />
                         <div className="min-w-0">
-                          <p className="text-sm font-black uppercase tracking-wide text-[#6f9fd4]">
+                          <p className="text-sm font-black uppercase tracking-wide text-foreground">
                             Ajustes Administrador
                           </p>
-                          <p className="text-xs text-zinc-500">
-                            Panel de administración de FarmaMuni.
+                          <p className="text-xs text-muted-foreground">
+                            Panel de administración del sistema.
                           </p>
                         </div>
                       </div>
                       <MenuAccordionChevron open={adminOpen} />
                     </button>
                     {adminOpen && (
-                      <div className="border-t border-[#2E9BD0]/25">
+                      <div className="border-t border-zinc-200/90 dark:border-zinc-700/80">
                         <Link
-                          href="/farmamuni/admin"
+                          href={`${APP_BASE_PATH}/admin`}
                           onClick={closeMenu}
                           className={cn(
-                            "flex items-center gap-3 px-4 py-3 transition-colors",
-                            pathname === "/farmamuni/admin"
-                              ? "bg-[#2c5f9b]/20 border-l-4 border-l-[#6f9fd4]"
-                              : "hover:bg-[#2c5f9b]/15",
+                            "flex items-center gap-3 px-4 py-3",
+                            menuRowHover,
+                            pathname === `${APP_BASE_PATH}/admin` &&
+                              "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
                           )}
                         >
                           <MorphIconBox
                             from={navMorphIcons.settings.from}
                             to={navMorphIcons.settings.to}
-                            size={16}
+                            size={MENU_ICON_SUB.size}
                             color={navIconColors.brandBright}
-                            strokeWidth={2}
+                            strokeWidth={MENU_ICON_SUB.strokeWidth}
                             spring="snappy"
-                            padding="xs"
-                            boxClassName="border-0 bg-transparent shrink-0"
+                            padding={MENU_ICON_SUB.padding}
+                            boxClassName={cn("shrink-0", navIconBoxClass.menuTileSub)}
                           />
                           <div>
-                            <p className="text-sm font-bold text-white">
+                            <p className="text-sm font-bold text-foreground">
                               Panel Admin
                             </p>
-                            <p className="text-[11px] text-zinc-500">
+                            <p className="text-[11px] text-muted-foreground">
                               Vista general de administración.
                             </p>
                           </div>
@@ -505,30 +599,30 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                               href={item.href}
                               onClick={closeMenu}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-3 border-t border-[#2E9BD0]/20 transition-colors",
-                                active
-                                  ? "bg-[#2c5f9b]/20 border-l-4 border-l-[#6f9fd4]"
-                                  : "hover:bg-[#2c5f9b]/15",
+                                "flex items-center gap-3 px-4 py-3 border-t border-zinc-200/80 dark:border-zinc-700/70",
+                                menuRowHover,
+                                active &&
+                                  "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
                               )}
                             >
                               <MorphIconBox
                                 from={pair.from}
                                 to={pair.to}
-                                size={16}
+                                size={MENU_ICON_SUB.size}
                                 color={palette.color}
-                                strokeWidth={2}
+                                strokeWidth={MENU_ICON_SUB.strokeWidth}
                                 spring="snappy"
-                                padding="xs"
+                                padding={MENU_ICON_SUB.padding}
                                 boxClassName={cn(
                                   "border shrink-0",
                                   palette.boxClass,
                                 )}
                               />
                               <div className="min-w-0">
-                                <p className="text-sm font-bold text-white">
+                                <p className="text-sm font-bold text-foreground">
                                   {item.title}
                                 </p>
-                                <p className="text-[11px] text-zinc-500 line-clamp-1">
+                                <p className="text-[11px] text-muted-foreground line-clamp-1">
                                   {item.desc}
                                 </p>
                               </div>
@@ -541,61 +635,34 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                 </section>
               )}
 
-              {isSuperOrAdmin && (
-                <div className="rounded-2xl border border-violet-500/40 bg-violet-950/20 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setDemoMode(!isDemoMode)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer hover:bg-violet-950/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FlaskConical className="size-4 text-violet-400 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-black uppercase tracking-wide text-violet-300">
-                          Simular datos
-                        </p>
-                        <p className="text-xs text-zinc-500">
-                          Vista previa con datos de ejemplo.
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        "text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border shrink-0",
-                        isDemoMode
-                          ? "border-violet-400/60 bg-violet-500/20 text-violet-200"
-                          : "border-zinc-700 bg-zinc-900 text-zinc-500",
-                      )}
-                    >
-                      {isDemoMode ? "Activo" : "Off"}
-                    </span>
-                  </button>
-                </div>
-              )}
-
               {realRole === "super" && (
-                <div className="rounded-2xl border border-amber-500/50 bg-amber-500/5 overflow-hidden">
+                <div className={cn(menuWhiteCard, "border-amber-200/80 dark:border-amber-500/30")}>
                   <button
                     type="button"
                     onClick={() => setRoleOpen((v) => !v)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer hover:bg-amber-500/10 transition-colors"
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 px-4 py-3 text-left cursor-pointer",
+                      menuRowHover,
+                    )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <Shield className="size-4 text-amber-400 shrink-0" />
-                      <span className="text-sm font-bold text-amber-400 uppercase">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-zinc-200/90 bg-zinc-100 dark:border-zinc-600/55 dark:bg-zinc-800">
+                        <Shield className="size-5 text-amber-700 dark:text-amber-400" />
+                      </span>
+                      <span className="text-sm font-bold text-foreground uppercase">
                         Rol Real: {realRole.toUpperCase()}
                       </span>
                     </div>
                     <MenuAccordionChevron open={roleOpen} />
                   </button>
                   {roleOpen && (
-                    <div className="border-t border-amber-500/30 px-4 py-3">
+                    <div className="border-t border-zinc-200/90 dark:border-zinc-700/80 px-4 py-3">
                       <select
                         value={simulatedRole || ""}
                         onChange={(e) =>
                           setSimulatedRole(e.target.value || null)
                         }
-                        className="w-full rounded-lg border border-amber-500/40 bg-zinc-950 px-3 py-2 text-xs font-bold text-amber-300 outline-none cursor-pointer"
+                        className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-foreground outline-none cursor-pointer dark:border-zinc-700 dark:bg-zinc-900"
                       >
                         <option value="">
                           Sin simulación ({realRole.toUpperCase()})
@@ -631,7 +698,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
           )}
         </div>
 
-        <div className="mt-auto border-t border-zinc-800 px-5 py-4">
+        <div className="mt-auto border-t border-border/60 px-5 py-4">
           <div className="flex flex-col items-center justify-center gap-1.5">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">
               © 2026 KoreAPP

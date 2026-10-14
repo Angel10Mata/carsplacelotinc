@@ -1,4 +1,4 @@
-import { getPendingDevicesCount } from "@/components/(Kore)/admin/lib/actions";
+import { getPendingDevicesCount } from "@/components/(base)/admin/lib/actions";
 import { AlertTriangle } from "lucide-react";
 import { AdminCards } from "./AdminCards";
 import { adminPageShellClass } from "@/lib/module-layout";

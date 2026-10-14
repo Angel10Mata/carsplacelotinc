@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useDemoMode } from "@/components/(base)/providers/DemoModeProvider";
 import { useUserContext } from "@/components/(base)/providers/UserProvider";
-import { DEMO_LOW_STOCK_COUNT } from "@/lib/demo/fixtures";
-import { createClient } from "@/utils/supabase/client";
 import { MorphIconBox } from "@/components/ui/morph-hover-icon";
 import { APP_MODULES, type AppModuleConfig } from "@/lib/app-modules";
 import { moduleIconColors, moduleMorphIcons, navMorphIcons } from "@/lib/morph-icons";
 import { dashboardInnerClass, dashboardOuterClass } from "@/lib/module-layout";
-
-// SUBCOMPONENTES
 
 const DashboardHeader = () => (
   <div className="mb-4 md:mb-6 w-full px-1 text-left">
@@ -22,15 +17,6 @@ const DashboardHeader = () => (
     </h1>
   </div>
 );
-
-function DashboardBackdrop() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden bg-zinc-100 dark:bg-zinc-950" aria-hidden>
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.6),transparent_40%)] dark:bg-[linear-gradient(to_bottom,rgba(39,39,42,0.5),transparent_45%)]" />
-      <div className="absolute inset-0 opacity-40 dark:opacity-25 [background-image:linear-gradient(rgba(161,161,170,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(161,161,170,0.15)_1px,transparent_1px)] dark:[background-image:linear-gradient(rgba(82,82,91,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(82,82,91,0.35)_1px,transparent_1px)] [background-size:40px_40px]" />
-    </div>
-  );
-}
 
 function ModuleMorphIcon({
   moduleId,
@@ -49,16 +35,23 @@ function ModuleMorphIcon({
         "bg-sky-50 dark:bg-sky-950/45 border-sky-200/90 dark:border-sky-800/55",
     };
 
+  const isLarge = size >= 56;
+
   return (
     <MorphIconBox
       from={pair.from}
       to={pair.to}
       size={size}
       color={palette.color}
-      strokeWidth={1.75}
-      spring="snappy"
+      strokeWidth={isLarge ? 2.1 : 1.85}
+      spring="bouncy"
+      padding={isLarge ? "md" : "sm"}
       hovered={hovered}
-      boxClassName={palette.boxClass}
+      boxClassName={cn(
+        palette.boxClass,
+        "rounded-2xl shrink-0",
+        isLarge && "scale-100 group-hover/card:scale-[1.02] transition-transform duration-300",
+      )}
     />
   );
 }
@@ -66,12 +59,10 @@ function ModuleMorphIcon({
 function DashboardModuleCard({
   mod,
   index,
-  lowStockCount,
   onNavigate,
 }: {
   mod: AppModuleConfig;
   index: number;
-  lowStockCount: number;
   onNavigate: (href: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -136,11 +127,7 @@ function DashboardModuleCard({
               mod.size === "compact" || mod.size === "wide" ? "md:flex-1" : "flex-1",
             )}
           >
-            <ModuleMorphIcon
-              moduleId={mod.id}
-              size={iconSize}
-              hovered={hovered}
-            />
+            <ModuleMorphIcon moduleId={mod.id} size={iconSize} hovered={hovered} />
 
             <div className="flex-1 min-w-0 flex flex-col justify-start">
               <h3
@@ -203,44 +190,30 @@ function DashboardModuleCard({
             </div>
           </div>
         </div>
-        {mod.id === "inventario" && lowStockCount > 0 && (
-          <div className="absolute top-4 left-4 z-20 flex items-center justify-center">
-            <span className="relative flex h-3 w-3" title={`¡${lowStockCount} productos en stock mínimo!`}>
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
-            </span>
-          </div>
-        )}
       </div>
     </motion.div>
   );
 }
 
-// PANEL PRINCIPAL
+function DashboardEmptyModules() {
+  return (
+    <div className="w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900/50 p-10 md:p-14 text-center">
+      <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+        Sin módulos de negocio
+      </p>
+      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+        Los módulos anteriores fueron retirados. Agrega entradas en{" "}
+        <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">src/lib/app-modules.ts</code>{" "}
+        y crea cada módulo bajo{" "}
+        <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">src/components/(base)/</code>.
+      </p>
+    </div>
+  );
+}
 
 export function VerDashboard() {
   const { effectiveRole } = useUserContext();
-  const { isDemoMode } = useDemoMode();
-  const [lowStockCount, setLowStockCount] = useState(0);
   const router = useRouter();
-
-  useEffect(() => {
-    if (isDemoMode) {
-      setLowStockCount(DEMO_LOW_STOCK_COUNT);
-      return;
-    }
-    const fetchLowStock = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase.from("inv_productos").select("stock_actual, stock_minimo");
-      if (data) {
-        const count = data.filter((p: { stock_actual: number; stock_minimo: number }) => p.stock_actual <= p.stock_minimo).length;
-        setLowStockCount(count);
-      } else if (error) {
-        console.error("Error fetching low stock:", error);
-      }
-    };
-    fetchLowStock();
-  }, [isDemoMode]);
 
   const isSuperOrAdmin = ["super", "admin"].includes(effectiveRole);
   const roleLoaded = effectiveRole !== "authenticated";
@@ -257,12 +230,6 @@ export function VerDashboard() {
     router.push(href);
   };
 
-  const AREA_NEGOCIO = ["ventas", "clientes", "proveedores", "inventario", "finanzas", "creditos"];
-
-  const negocioModules = AREA_NEGOCIO
-    .map((id) => visibleModules.find((m) => m.id === id))
-    .filter(Boolean) as AppModuleConfig[];
-
   const AreaLabel = ({ children }: { children: React.ReactNode }) => (
     <div className="flex items-center justify-center gap-3 w-full px-1 mb-4 md:mb-5">
       <div className="h-px flex-1 max-w-24 bg-zinc-200 dark:bg-zinc-800" />
@@ -273,34 +240,27 @@ export function VerDashboard() {
     </div>
   );
 
-  const renderModuleCard = (mod: AppModuleConfig, index: number) => (
-    <DashboardModuleCard
-      key={mod.id}
-      mod={mod}
-      index={index}
-      lowStockCount={lowStockCount}
-      onNavigate={handleCardClick}
-    />
-  );
-
-  const renderBentoGrid = () => (
-    <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/50 p-4 md:p-6">
-      <AreaLabel>Negocio</AreaLabel>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 auto-rows-auto sm:auto-rows-[160px]">
-        {negocioModules.map((mod, index) => renderModuleCard(mod, index))}
-      </div>
-    </div>
-  );
-
   return (
-    <div className="relative w-full flex-1 min-h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
-      <DashboardBackdrop />
-
-      <div className={dashboardOuterClass}>
-        <div className={dashboardInnerClass}>
-          <DashboardHeader />
-          {renderBentoGrid()}
-        </div>
+    <div className={dashboardOuterClass}>
+      <div className={dashboardInnerClass}>
+        <DashboardHeader />
+        {visibleModules.length === 0 ? (
+          <DashboardEmptyModules />
+        ) : (
+          <div className="w-full rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 md:p-6 shadow-sm">
+            <AreaLabel>Negocio</AreaLabel>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 auto-rows-auto sm:auto-rows-[160px]">
+              {visibleModules.map((mod, index) => (
+                <DashboardModuleCard
+                  key={mod.id}
+                  mod={mod}
+                  index={index}
+                  onNavigate={handleCardClick}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

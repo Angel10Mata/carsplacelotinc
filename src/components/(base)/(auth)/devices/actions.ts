@@ -2,6 +2,7 @@
 
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { APP_BASE_PATH } from "@/lib/app-config";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
@@ -19,7 +20,7 @@ export async function authorizeDevice(deviceId: string, friendlyName?: string) {
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/farmamuni");
+  revalidatePath(APP_BASE_PATH);
   return { success: true };
 }
 
@@ -31,6 +32,6 @@ export async function denyDevice(deviceId: string) {
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath("/farmamuni");
+  revalidatePath(APP_BASE_PATH);
   return { success: true };
 }

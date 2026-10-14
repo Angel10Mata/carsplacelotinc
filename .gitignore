@@ -46,3 +46,7 @@ ejemplos/
 # scratch
 /scratch/
 scratch_*.js
+
+# local reference clones (not part of the app)
+.tmp-siget/
+.tmp-tcpl/

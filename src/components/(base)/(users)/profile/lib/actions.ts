@@ -6,6 +6,7 @@ import {
   type AdminUserAttributes,
 } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { APP_BASE_PATH } from "@/lib/app-config";
 import { ProfileFormValues } from "./zod";
 
 // Helpers
@@ -179,6 +180,6 @@ export async function toggleUserStatus(userId: string, isBanned: boolean) {
     throw new Error(error.message);
   }
 
-  revalidatePath("/farmamuni/admin/usuarios");
+  revalidatePath(`${APP_BASE_PATH}/admin/usuarios`);
   return { success: true };
 }

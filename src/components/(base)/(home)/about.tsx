@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { AppLogo } from "@/components/(base)/brand/AppLogo";
 import { MapPin, Phone, Info } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -37,14 +37,8 @@ export function AboutSection() {
           transition={{ duration: 1.2, ease: "easeOut", delay: 0.5 }}
           className="relative aspect-square w-full max-w-80 lg:max-w-112.5 mx-auto"
         >
-          <div className="h-full w-full rounded-4xl overflow-hidden border border-border/50">
-            <Image
-              src="/icon.png"
-              alt="Logo"
-              fill
-              className="object-cover"
-              priority
-            />
+          <div className="flex h-full w-full items-center justify-center rounded-4xl border border-border/50 bg-card p-6">
+            <AppLogo size={280} priority className="w-full h-auto max-h-full" />
           </div>
         </motion.div>
 

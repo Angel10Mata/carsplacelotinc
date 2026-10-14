@@ -1,8 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { APP_BASE_PATH } from "@/lib/app-config";
 import { isAdminRole, resolveUserRole } from "@/lib/user-role";
 import { createClient } from "@/utils/supabase/proxy";
-
-// MIDDLEWARE: AUTH, DISPOSITIVOS Y ADMIN
 
 export async function proxy(request: NextRequest) {
   const { supabase, response } = createClient(request);
@@ -14,14 +13,15 @@ export async function proxy(request: NextRequest) {
     console.error("Supabase auth error in proxy:", error);
   }
   const pathname = request.nextUrl.pathname;
+  const adminPrefix = `${APP_BASE_PATH}/admin`;
 
-  if (!user && pathname.startsWith("/farmamuni")) {
+  if (!user && pathname.startsWith(APP_BASE_PATH)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-if (user) {
+  if (user) {
     const { data: settings } = await supabase
       .from("app_settings")
       .select("require_device_authorization")
@@ -40,7 +40,7 @@ if (user) {
     if (pathname === "/esperando-acceso") {
       if (!requireAuth) {
         const url = request.nextUrl.clone();
-        url.pathname = "/farmamuni";
+        url.pathname = APP_BASE_PATH;
         return NextResponse.redirect(url);
       }
 
@@ -48,7 +48,7 @@ if (user) {
 
       if (isAdminRole(realRole)) {
         const url = request.nextUrl.clone();
-        url.pathname = "/farmamuni";
+        url.pathname = APP_BASE_PATH;
         return NextResponse.redirect(url);
       }
 
@@ -63,24 +63,21 @@ if (user) {
 
       if (device && device.is_authorized) {
         const url = request.nextUrl.clone();
-        url.pathname = "/farmamuni";
+        url.pathname = APP_BASE_PATH;
         return NextResponse.redirect(url);
       }
     }
 
     if (pathname === "/login") {
       const url = request.nextUrl.clone();
-      url.pathname = "/farmamuni";
+      url.pathname = APP_BASE_PATH;
       return NextResponse.redirect(url);
     }
 
-    if (pathname.startsWith("/farmamuni")) {
+    if (pathname.startsWith(APP_BASE_PATH)) {
       const realRole = await getRealRole();
 
-      if (
-        pathname.startsWith("/farmamuni/admin") &&
-        !isAdminRole(realRole)
-      ) {
+      if (pathname.startsWith(adminPrefix) && !isAdminRole(realRole)) {
         const url = request.nextUrl.clone();
         url.pathname = "/sin-acceso";
         return NextResponse.redirect(url);
@@ -107,8 +104,6 @@ if (user) {
 
   return response;
 }
-
-// MATCHER (EXCLUIR ESTÁTICOS)
 
 export const config = {
   matcher: [
