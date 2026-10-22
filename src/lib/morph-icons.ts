@@ -87,15 +87,15 @@ export const moduleIconColors: Record<string, MorphIconColorSet> = {
     boxClass:
       "bg-indigo-50 dark:bg-indigo-950/45 border-indigo-200/90 dark:border-indigo-800/55",
   },
-  "flota-vehicular": {
+  vehiculos: {
     color: "#dc2626",
     boxClass:
       "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/50 dark:to-orange-950/30 border-red-200/90 dark:border-red-800/55 shadow-md ring-1 ring-red-500/10 dark:ring-red-400/10",
   },
   reporteria: {
-    color: "#4f46e5",
+    color: "#71717a",
     boxClass:
-      "bg-gradient-to-br from-indigo-50 to-sky-50 dark:from-indigo-950/50 dark:to-sky-950/30 border-indigo-200/90 dark:border-indigo-800/55 shadow-md ring-1 ring-indigo-500/10 dark:ring-indigo-400/10",
+      "bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-900/80 dark:to-zinc-800/40 border-zinc-300/90 dark:border-zinc-600/55 shadow-md ring-1 ring-zinc-400/10 dark:ring-zinc-500/10",
   },
 };
 
@@ -113,17 +113,17 @@ export const adminIconColors: Record<string, MorphIconColorSet> = {
       "bg-purple-50 dark:bg-purple-950/45 border-purple-200/90 dark:border-purple-700/55 shadow-sm",
   },
   configuraciones: {
-    color: "#2563EB",
+    color: "#dc2626",
     boxClass:
-      "bg-blue-50 dark:bg-blue-950/45 border-blue-200/90 dark:border-blue-700/55 shadow-sm",
+      "bg-red-50 dark:bg-red-950/45 border-red-200/90 dark:border-red-800/55 shadow-sm",
   },
 };
 
 // COLORES NAVEGACIÓN
 
 export const navIconColors = {
-  brand: "#1a6aa5",
-  brandBright: "#2E9BD0",
+  brand: "#dc2626",
+  brandBright: "#ef4444",
   brandRed: "#dc2626",
   brandRedBright: "#ef4444",
   success: "#2E9E77",
@@ -147,7 +147,7 @@ export const moduleMorphIcons: Record<string, MorphIconPair> = {
   clientes: { from: Users, to: UserRoundPlus },
   finanzas: { from: Wallet, to: CircleDollarSign },
   creditos: { from: CreditCard, to: Wallet },
-  "flota-vehicular": { from: Warehouse, to: CarFront },
+  vehiculos: { from: Warehouse, to: CarFront },
   reporteria: { from: FileChartColumnIncreasing, to: ChartColumnIncreasing },
 };
 

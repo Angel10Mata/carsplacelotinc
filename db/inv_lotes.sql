@@ -1,4 +1,0 @@
--- Ya aplicaste el script principal (tabla inv_lotes, ven_detalles.lote_id, limpieza inv_productos, RLS).
--- Ejecuta en SQL Editor el contenido de:
---   supabase/migrations/20261002_inv_sync_stock_from_lotes.sql
--- para que stock_actual del catálogo se actualice al mover lotes.

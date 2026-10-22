@@ -29,8 +29,8 @@ export function ModuleHeaderBackButton({
       onClick={() => router.push(href)}
       aria-label="Regresar"
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-2xl border border-[#8DA78E]/20 bg-[#8DA78E]/10",
-        "text-[#8DA78E] transition-colors hover:bg-[#8DA78E]/20 dark:text-[#A3BEB0] cursor-pointer",
+        "flex shrink-0 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10",
+        "text-brand transition-colors hover:bg-brand/20 dark:text-brand-bright dark:hover:bg-brand-bright/15 cursor-pointer",
         boxClass,
         className,
       )}

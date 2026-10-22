@@ -5,22 +5,22 @@ import type { IconNode } from "lucide";
 import { MorphHoverIcon } from "@/components/ui/morph-hover-icon";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { cn } from "@/lib/utils";
+import { TCPL_ACTION } from "@/lib/brand-colors";
 
-// Colores por tipo de acción
 export const sigetBtnSurface =
   "h-9 min-w-0 border-2 border-border bg-white px-2.5 py-0 text-xs font-bold shadow-none hover:bg-zinc-50 dark:border-zinc-700 dark:bg-card dark:hover:bg-zinc-800";
 
 export const sigetAccent = {
-  abrir: "#2E9BD0",
-  enlace: "#C28A38",
-  activa: "#2E9E77",
-  inactiva: "#CC5C5C",
-  editar: "#2E9BD0",
-  guardar: "#2E9E77",
-  cancelar: "#C28A38",
-  quitar: "#CC5C5C",
-  crear: "#2E9BD0",
-  excel: "#2E9E77",
+  abrir: TCPL_ACTION.primary,
+  enlace: TCPL_ACTION.warning,
+  activa: TCPL_ACTION.success,
+  inactiva: TCPL_ACTION.danger,
+  editar: TCPL_ACTION.primary,
+  guardar: TCPL_ACTION.success,
+  cancelar: TCPL_ACTION.warning,
+  quitar: TCPL_ACTION.danger,
+  crear: TCPL_ACTION.primary,
+  excel: TCPL_ACTION.success,
 } as const;
 
 // Icono con animación

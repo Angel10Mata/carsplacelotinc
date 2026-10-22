@@ -219,7 +219,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Usuario
                     </p>
-                    <p className="font-bold leading-tight text-celeste-trifinio truncate">
+                    <p className="font-bold leading-tight text-brand dark:text-brand-bright truncate">
                       {username}
                     </p>
                   </div>
@@ -227,7 +227,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Rol
                     </p>
-                    <p className="font-bold leading-tight text-celeste-trifinio uppercase truncate">
+                    <p className="font-bold leading-tight text-brand dark:text-brand-bright uppercase truncate">
                       {effectiveRole}
                     </p>
                   </div>
@@ -250,17 +250,17 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
             <>
               <section>
                 <MenuSectionLabel
-                  dotClass="bg-[#2563EB]"
-                  labelClass="text-[#2563EB] dark:text-[#6f9fd4]"
+                  dotClass="bg-brand"
+                  labelClass="text-brand dark:text-brand-bright"
                 >
                   Inicio
                 </MenuSectionLabel>
                 {isRoot ? (
-                  <div className="rounded-2xl border border-sky-200/90 bg-white p-1.5 shadow-sm dark:border-sky-900/45 dark:bg-zinc-900">
+                  <div className="rounded-2xl border border-red-200/90 bg-white p-1.5 shadow-sm dark:border-red-900/45 dark:bg-zinc-900">
                     <Link
                       href={APP_BASE_PATH}
                       onClick={closeMenu}
-                      className="flex items-start gap-3 rounded-xl border border-sky-200/90 bg-sky-50/95 px-4 py-3.5 border-l-4 border-l-[#2563EB] dark:border-sky-800/50 dark:bg-sky-950/20 dark:border-l-[#6f9fd4]"
+                      className="flex items-start gap-3 rounded-xl border border-red-200/90 bg-red-50/95 px-4 py-3.5 border-l-4 border-l-brand dark:border-red-800/50 dark:bg-red-950/20 dark:border-l-brand-bright"
                     >
                       <MorphIconBox
                         from={navMorphIcons.home.from}
@@ -273,7 +273,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                         boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black uppercase tracking-wide text-[#2563EB] dark:text-[#6f9fd4]">
+                        <p className="text-sm font-black uppercase tracking-wide text-brand dark:text-brand-bright">
                           Inicio
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
@@ -317,8 +317,8 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
               {visibleModules.length > 0 && (
                 <section>
                   <MenuSectionLabel
-                    dotClass="bg-[#2563EB]"
-                    labelClass="text-[#2563EB] dark:text-[#6f9fd4]"
+                    dotClass="bg-brand"
+                    labelClass="text-brand dark:text-brand-bright"
                   >
                     Módulos
                   </MenuSectionLabel>
@@ -368,7 +368,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                                 "flex items-center gap-3 px-4 py-3 border-t border-zinc-200/80 dark:border-zinc-700/70 first:border-t-0",
                                 menuRowHover,
                                 active &&
-                                  "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
+                                  "bg-red-50/80 border-l-4 border-l-brand dark:bg-red-950/15 dark:border-l-brand-bright",
                               )}
                             >
                               <MorphIconBox
@@ -522,12 +522,12 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
               {isSuperOrAdmin && (
                 <section>
                   <MenuSectionLabel
-                    dotClass="bg-[#2E9BD0]"
-                    labelClass="text-[#2c5f9b] dark:text-[#6f9fd4]"
+                    dotClass="bg-brand-bright"
+                    labelClass="text-brand dark:text-brand-bright"
                   >
                     Administración
                   </MenuSectionLabel>
-                  <div className={cn(menuWhiteCard, "border-[#2c5f9b]/20 dark:border-[#2E9BD0]/30")}>
+                  <div className={cn(menuWhiteCard, "border-brand/20 dark:border-brand-bright/30")}>
                     <button
                       type="button"
                       onClick={() => setAdminOpen((v) => !v)}
@@ -567,7 +567,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                             "flex items-center gap-3 px-4 py-3",
                             menuRowHover,
                             pathname === `${APP_BASE_PATH}/admin` &&
-                              "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
+                              "bg-red-50/80 border-l-4 border-l-brand dark:bg-red-950/15 dark:border-l-brand-bright",
                           )}
                         >
                           <MorphIconBox
@@ -602,7 +602,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                                 "flex items-center gap-3 px-4 py-3 border-t border-zinc-200/80 dark:border-zinc-700/70",
                                 menuRowHover,
                                 active &&
-                                  "bg-sky-50/80 border-l-4 border-l-[#2563EB] dark:bg-sky-950/15 dark:border-l-[#6f9fd4]",
+                                  "bg-red-50/80 border-l-4 border-l-brand dark:bg-red-950/15 dark:border-l-brand-bright",
                               )}
                             >
                               <MorphIconBox
@@ -680,7 +680,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
               <Link
                 href="/login"
                 onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-[#2c5f9b] text-white px-5 py-3.5 text-sm font-bold w-full hover:bg-[#2E9BD0] transition-colors"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-brand text-white px-5 py-3.5 text-sm font-bold w-full hover:bg-brand-bright transition-colors"
               >
                 <span>Iniciar Sesión</span>
                 <MorphIconBox

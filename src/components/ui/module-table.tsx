@@ -47,7 +47,7 @@ export function ModuleTableFooter({
 }
 
 // Clases reutilizables de listas
-export const moduleTableAccentBarClass = "h-1 w-full shrink-0 bg-celeste-trifinio";
+export const moduleTableAccentBarClass = "h-1 w-full shrink-0 bg-brand";
 
 export const moduleTableShellClass =
   "flex flex-col flex-1 min-w-0 overflow-hidden rounded-2xl border border-border bg-card dark:border-zinc-700 dark:bg-zinc-900/40 p-5 shadow-sm";
@@ -82,7 +82,7 @@ export const moduleTableDesktopScrollClass = "overflow-x-auto";
 export const moduleTableClass = "w-full text-left text-xs border-collapse";
 
 export const moduleTableHeadRowClass =
-  "border-b border-border bg-sky-50 text-[10px] font-bold uppercase tracking-widest text-celeste-trifinio dark:border-zinc-700 dark:bg-sky-950";
+  "border-b border-border bg-brand-soft text-[10px] font-bold uppercase tracking-widest text-brand dark:border-zinc-700 dark:bg-red-950/35 dark:text-brand-bright";
 
 export const moduleTableHeadCellClass = "px-5 py-3.5";
 
@@ -90,7 +90,7 @@ export const moduleTableBodyClass =
   "divide-y divide-zinc-100 dark:divide-zinc-800/50 text-zinc-700 dark:text-zinc-300";
 
 export const moduleTableRowClass =
-  "border-b border-border transition-colors last:border-0 hover:bg-sky-50/40 dark:border-zinc-800 dark:hover:bg-sky-950/20";
+  "border-b border-border transition-colors last:border-0 hover:bg-brand-soft/70 dark:border-zinc-800 dark:hover:bg-red-950/15";
 
 export const moduleTableCellClass = "px-5 py-3.5";
 

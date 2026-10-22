@@ -156,7 +156,7 @@ export function PushNotificationToggle() {
       title={isSubscribed ? 'Desactivar notificaciones' : 'Activar notificaciones'}
     >
       {loading ? (
-        <Loader2 className="animate-spin" style={{ width: '22px', height: '22px', color: '#2563EB' }} />
+        <Loader2 className="animate-spin size-[22px] text-brand" />
       ) : isSubscribed ? (
         <div style={{ position: 'relative', display: 'flex' }}>
           <Bell strokeWidth={2} style={{ width: '26px', height: '26px', color: bellColor, fill: bellColor }} />

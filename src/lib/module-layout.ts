@@ -59,8 +59,6 @@ export const moduleListPageShellClass = [
   "w-full",
   moduleContentMaxWidth,
   "mx-auto flex flex-col gap-3",
-  "px-3 sm:px-4 md:px-5",
-  "pt-28 pb-6 md:pt-24 md:pb-8",
 ].join(" ");
 
 export const inventarioPageShellClass = [

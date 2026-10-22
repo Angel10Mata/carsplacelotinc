@@ -1,0 +1,312 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { APP_BASE_PATH } from "@/lib/app-config";
+import { createClient } from "@/utils/supabase/server";
+import { DEFAULT_CAR_INCOTERMS, DEFAULT_CAR_STATUS } from "./helpers";
+import {
+  customerRowSchema,
+  type CustomerRow,
+} from "@/components/(base)/clientes/lib/zod";
+import { codeFromPgUniqueViolation } from "./action-errors";
+import {
+  actualizarCarSchema,
+  carRowSchema,
+  crearCarSchema,
+} from "./zod";
+
+function resolveRegisteredBy(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): string {
+  const meta = user.user_metadata ?? {};
+  const nombre = meta.nombre ?? meta.full_name ?? meta.username;
+  if (typeof nombre === "string" && nombre.trim()) return nombre.trim();
+  return user.email?.split("@")[0] ?? "Usuario";
+}
+
+function parseNumericCarId(value: string | null | undefined): number | null {
+  if (!value?.trim()) return null;
+  const n = Number(value.trim());
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+export async function allocateCarStorageFolderAction() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" as const };
+
+    const { data, error } = await supabase.from("cars").select("car_id");
+    if (error) {
+      console.error("allocateCarStorageFolder:", error.message);
+      return { ok: false as const, code: "DB_ERROR" as const };
+    }
+
+    const usedFolderIds = new Set<string>();
+    let maxNumeric = 0;
+    for (const row of data ?? []) {
+      const raw = row.car_id;
+      if (typeof raw !== "string" || !raw.trim()) continue;
+      const id = raw.trim();
+      usedFolderIds.add(id);
+      const n = parseNumericCarId(id);
+      if (n !== null) maxNumeric = Math.max(maxNumeric, n);
+    }
+
+    let next = maxNumeric > 0 ? maxNumeric + 1 : 1;
+    while (usedFolderIds.has(String(next))) {
+      next += 1;
+    }
+
+    return { ok: true as const, carFolderId: String(next) };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" as const };
+  }
+}
+
+export async function listCarsAction() {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("listCars:", error.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    const cars = (data ?? [])
+      .map((row) => {
+        const parsedRow = carRowSchema.safeParse(row);
+        if (!parsedRow.success) {
+          const id =
+            typeof row === "object" &&
+            row !== null &&
+            "id" in row &&
+            typeof row.id === "string"
+              ? row.id
+              : "?";
+          console.warn("listCars: fila omitida (formato inválido)", id);
+        }
+        return parsedRow;
+      })
+      .filter((r) => r.success)
+      .map((r) => r.data);
+
+    const customerIds = [
+      ...new Set(
+        cars
+          .map((c) => c.customer_id)
+          .filter((id): id is string => typeof id === "string" && id.length > 0),
+      ),
+    ];
+
+    const customerById = new Map<string, CustomerRow>();
+
+    if (customerIds.length > 0) {
+      const { data: customerRows, error: customerError } = await supabase
+        .from("customers")
+        .select("id, customer_name, customer_nit, customer_address, created_at")
+        .in("id", customerIds);
+
+      if (customerError) {
+        console.error("listCars customers:", customerError.message);
+      } else {
+        for (const row of customerRows ?? []) {
+          const parsedCustomer = customerRowSchema.safeParse(row);
+          if (parsedCustomer.success) {
+            customerById.set(parsedCustomer.data.id, parsedCustomer.data);
+          }
+        }
+      }
+    }
+
+    const parsed = cars.map((car) => ({
+      car,
+      customer: car.customer_id
+        ? (customerById.get(car.customer_id) ?? null)
+        : null,
+    }));
+
+    return { ok: true as const, data: parsed };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
+export async function crearCarAction(raw: unknown) {
+  const parsed = crearCarSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false as const, code: "VALIDATION" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const carImages = (parsed.data.car_image_urls ?? [])
+      .map((url) => url.trim())
+      .filter(Boolean);
+
+    const payload = {
+      invoice_number: parsed.data.invoice_number,
+      invoice_date: `${parsed.data.invoice_date}T12:00:00.000Z`,
+      has_signed_receipt: parsed.data.has_signed_receipt,
+      customer_id: parsed.data.customer_id ?? null,
+      car_id:
+        parsed.data.car_id?.trim() ||
+        null,
+      car_title: parsed.data.car_title,
+      car_status:
+        parsed.data.car_status?.trim() || DEFAULT_CAR_STATUS,
+      car_model: parsed.data.car_model?.trim() || null,
+      car_vin: parsed.data.car_vin?.trim() || null,
+      car_price: parsed.data.car_price ?? null,
+      car_images: carImages,
+      sub_total: parsed.data.sub_total,
+      total: parsed.data.total,
+      terms: parsed.data.terms,
+      incoterms: parsed.data.incoterms?.trim() || DEFAULT_CAR_INCOTERMS,
+      registered_by: resolveRegisteredBy(user),
+    };
+
+    const { error } = await supabase.from("cars").insert(payload);
+    if (error) {
+      console.error("crearCar:", error.message, error.details);
+      if (error.code === "23505") {
+        const dup = codeFromPgUniqueViolation(error);
+        return {
+          ok: false as const,
+          code: dup.code,
+          detail: dup.detail ?? null,
+        };
+      }
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    revalidatePath(`${APP_BASE_PATH}/vehiculos`);
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
+export async function getCarForEditAction(id: string) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.error("getCarForEdit:", error?.message);
+      return { ok: false as const, code: "NOT_FOUND" };
+    }
+
+    const parsedCar = carRowSchema.safeParse(data);
+    if (!parsedCar.success) {
+      return { ok: false as const, code: "VALIDATION" };
+    }
+
+    let customer = null;
+    const customerId = parsedCar.data.customer_id;
+    if (customerId) {
+      const { data: customerRow } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("id", customerId)
+        .maybeSingle();
+      if (customerRow) {
+        const parsedCustomer = customerRowSchema.safeParse(customerRow);
+        if (parsedCustomer.success) customer = parsedCustomer.data;
+      }
+    }
+
+    return {
+      ok: true as const,
+      data: { car: parsedCar.data, customer },
+    };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
+export async function actualizarCarAction(raw: unknown) {
+  const parsed = actualizarCarSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false as const, code: "VALIDATION" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const carImages = (parsed.data.car_image_urls ?? [])
+      .map((url) => url.trim())
+      .filter(Boolean);
+
+    const payload = {
+      invoice_number: parsed.data.invoice_number,
+      invoice_date: `${parsed.data.invoice_date}T12:00:00.000Z`,
+      has_signed_receipt: parsed.data.has_signed_receipt,
+      customer_id: parsed.data.customer_id ?? null,
+      car_id: parsed.data.car_id?.trim() || null,
+      car_title: parsed.data.car_title,
+      car_status: parsed.data.car_status?.trim() || DEFAULT_CAR_STATUS,
+      car_model: parsed.data.car_model?.trim() || null,
+      car_vin: parsed.data.car_vin?.trim() || null,
+      car_price: parsed.data.car_price ?? null,
+      car_images: carImages,
+      sub_total: parsed.data.sub_total,
+      total: parsed.data.total,
+      terms: parsed.data.terms,
+      incoterms: parsed.data.incoterms?.trim() || DEFAULT_CAR_INCOTERMS,
+    };
+
+    const { error } = await supabase
+      .from("cars")
+      .update(payload)
+      .eq("id", parsed.data.id);
+
+    if (error) {
+      console.error("actualizarCar:", error.message, error.details);
+      if (error.code === "23505") {
+        const dup = codeFromPgUniqueViolation(error);
+        return {
+          ok: false as const,
+          code: dup.code,
+          detail: dup.detail ?? null,
+        };
+      }
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    revalidatePath(`${APP_BASE_PATH}/vehiculos`);
+    return { ok: true as const };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}

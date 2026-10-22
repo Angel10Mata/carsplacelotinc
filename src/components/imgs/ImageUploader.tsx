@@ -40,6 +40,13 @@ interface ImageUploaderProps {
   compact?: boolean;
   /** Variante visual optimizada para foto de producto (cuadrado, drop zone ampliada) */
   variant?: 'default' | 'product';
+  /** Sustituye upload/remove directo al cliente Supabase (p. ej. server action) */
+  uploadStorageObject?: (input: {
+    path: string;
+    file: File;
+    replacePath: string | null;
+  }) => Promise<void>;
+  removeStorageObject?: (path: string) => Promise<void>;
 }
 
 const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(function ImageUploader({
@@ -57,6 +64,8 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
   previewClassName,
   compact = false,
   variant = 'default',
+  uploadStorageObject,
+  removeStorageObject,
 }, ref) {
   const supabase = createClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -187,18 +196,24 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
 
       const newPath = buildUniqueName('jpg');
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(newPath, jpegBlob, { upsert: false, contentType: 'image/jpeg' });
+      if (uploadStorageObject) {
+        await uploadStorageObject({
+          path: newPath,
+          file: jpegBlob,
+          replacePath: currentImagePath,
+        });
+      } else {
+        const { error: uploadError } = await supabase.storage
+          .from(bucketName)
+          .upload(newPath, jpegBlob, { upsert: false, contentType: 'image/jpeg' });
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // 4. Borrar anterior si existe
-      if (currentImagePath) {
-        await supabase.storage.from(bucketName).remove([currentImagePath]);
+        if (currentImagePath) {
+          await supabase.storage.from(bucketName).remove([currentImagePath]);
+        }
       }
 
-      // 5. Callback
       await onUploadSuccess(newPath);
     } catch (err: any) {
       console.error('Error al subir imagen:', err);
@@ -215,7 +230,11 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
 
     setDeleting(true);
     try {
-      await supabase.storage.from(bucketName).remove([currentImagePath]);
+      if (removeStorageObject) {
+        await removeStorageObject(currentImagePath);
+      } else {
+        await supabase.storage.from(bucketName).remove([currentImagePath]);
+      }
       await onDeleteSuccess();
     } catch (err: any) {
       console.error('Error al eliminar:', err);

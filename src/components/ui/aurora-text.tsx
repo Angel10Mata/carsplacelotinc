@@ -1,6 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
+import { TCPL_AURORA_COLORS } from "@/lib/brand-colors";
 
 interface AuroraTextProps {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ export const AuroraText = memo(
   ({
     children,
     className = "",
-    colors = ["#FF0080", "#7928CA", "#0070F3", "#38bdf8"],
+    colors = [...TCPL_AURORA_COLORS],
     speed = 1,
   }: AuroraTextProps) => {
     const gradientStyle = {

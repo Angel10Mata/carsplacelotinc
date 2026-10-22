@@ -8,6 +8,7 @@ import { useUserContext } from "@/components/(base)/providers/UserProvider";
 import { MorphIconBox } from "@/components/ui/morph-hover-icon";
 import { APP_MODULES, type AppModuleConfig } from "@/lib/app-modules";
 import { moduleIconColors, moduleMorphIcons, navMorphIcons } from "@/lib/morph-icons";
+import { TCPL_BRAND_RED } from "@/lib/brand-colors";
 import { dashboardInnerClass, dashboardOuterClass } from "@/lib/module-layout";
 
 const DashboardHeader = () => (
@@ -30,9 +31,9 @@ function ModuleMorphIcon({
   const pair = moduleMorphIcons[moduleId] ?? navMorphIcons.fallback;
   const palette =
     moduleIconColors[moduleId] ?? {
-      color: "#2E9BD0",
+      color: TCPL_BRAND_RED.primary,
       boxClass:
-        "bg-sky-50 dark:bg-sky-950/45 border-sky-200/90 dark:border-sky-800/55",
+        "bg-red-50 dark:bg-red-950/45 border-red-200/90 dark:border-red-800/55",
     };
 
   const isLarge = size >= 56;
@@ -76,7 +77,7 @@ function DashboardModuleCard({
           ? 48
           : 40;
 
-  const iconColor = moduleIconColors[mod.id]?.color ?? "#2E9BD0";
+  const iconColor = moduleIconColors[mod.id]?.color ?? TCPL_BRAND_RED.primary;
 
   return (
     <motion.div

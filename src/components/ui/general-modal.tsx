@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ban as BanNode, Check as CheckNode, Save, Trash, Trash2, X } from "lucide";
@@ -9,11 +9,17 @@ import {
   Ban as BanIcon,
   Package,
   Trash2 as Trash2Icon,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
   X as XIcon,
 } from "lucide-react";
+import { obtenerDiasDelMes } from "@/components/ui/CustomDatePicker";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import {
+  fechaCalendarioGt,
   formatFechaManualGt,
+  normalizarFechaCalendario,
   parseFechaManualGt,
 } from "@/lib/fechas-gt";
 import { cn } from "@/lib/utils";
@@ -51,7 +57,7 @@ export {
 export const modalFieldClass =
   "border border-zinc-200/80 dark:border-zinc-700 focus-visible:border-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-400/25 dark:focus-visible:border-zinc-500 dark:focus-visible:ring-zinc-500/30";
 
-export const modalAccentClass = "font-bold text-[#2c5f9b] dark:text-[#6f9fd4]";
+export const modalAccentClass = "font-bold text-brand dark:text-brand-bright";
 
 const modalInputBaseClass =
   "flex h-10 w-full rounded-lg bg-transparent px-3 py-2 text-sm text-foreground outline-none transition-colors focus-visible:outline-none";
@@ -170,6 +176,341 @@ export function ModalFechaInput({
       required={required}
       className={className}
     />
+  );
+}
+
+const MESES_ES = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
+] as const;
+
+function pad2(n: number) {
+  return n.toString().padStart(2, "0");
+}
+
+function fechaDesdeIso(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function ModalFechaCalendario({
+  value,
+  onChange,
+  id,
+  required,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  id?: string;
+  required?: boolean;
+  className?: string;
+}) {
+  const normalized = normalizarFechaCalendario(value);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 280 });
+
+  const baseDate = normalized ? fechaDesdeIso(normalized) : new Date();
+  const [navMonth, setNavMonth] = useState(baseDate.getMonth());
+  const [navYear, setNavYear] = useState(baseDate.getFullYear());
+
+  useEffect(() => {
+    if (!normalized) return;
+    const d = fechaDesdeIso(normalized);
+    setNavMonth(d.getMonth());
+    setNavYear(d.getFullYear());
+  }, [normalized]);
+
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      const width = Math.max(rect.width, 288);
+      let left = rect.left;
+      const maxLeft = window.innerWidth - width - 8;
+      if (left > maxLeft) left = Math.max(8, maxLeft);
+
+      const panelHeight = panelRef.current?.offsetHeight ?? 320;
+      let top = rect.bottom + 6;
+      if (top + panelHeight > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - panelHeight - 6);
+      }
+
+      setPanelPos({ top, left, width });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, navMonth, navYear]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  const cells = obtenerDiasDelMes(navMonth, navYear);
+  const hoyIso = fechaCalendarioGt();
+  const display = normalized ? formatFechaManualGt(normalized) : "Seleccionar fecha";
+
+  const panel =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <AnimatePresence>
+            <motion.div
+              ref={panelRef}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: "fixed",
+                top: panelPos.top,
+                left: panelPos.left,
+                width: panelPos.width,
+                zIndex: 250,
+              }}
+              className="rounded-xl border border-zinc-200 bg-white p-3 opacity-100 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-zinc-100 pb-2 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navMonth === 0) {
+                      setNavMonth(11);
+                      setNavYear((y) => y - 1);
+                      return;
+                    }
+                    setNavMonth((m) => m - 1);
+                  }}
+                  className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  aria-label="Mes anterior"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <p className="text-center text-sm font-bold text-brand dark:text-brand-bright">
+                  {MESES_ES[navMonth]} {navYear}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navMonth === 11) {
+                      setNavMonth(0);
+                      setNavYear((y) => y + 1);
+                      return;
+                    }
+                    setNavMonth((m) => m + 1);
+                  }}
+                  className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  aria-label="Mes siguiente"
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
+
+              <div className="mb-1 grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                {["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"].map((d) => (
+                  <div key={d} className="py-1">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-0.5">
+                {cells.map((cell, idx) => {
+                  const cellIso = `${cell.year}-${pad2(cell.month + 1)}-${pad2(cell.day)}`;
+                  const selected = normalized === cellIso;
+                  const isToday = hoyIso === cellIso;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        onChange(cellIso);
+                        setOpen(false);
+                      }}
+                      className={cn(
+                        "cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors",
+                        selected &&
+                          "bg-brand text-white dark:bg-brand-bright",
+                        !selected &&
+                          cell.isCurrentMonth &&
+                          isToday &&
+                          "border border-brand text-brand dark:border-brand-bright dark:text-brand-bright",
+                        !selected &&
+                          cell.isCurrentMonth &&
+                          !isToday &&
+                          "text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800",
+                        !selected &&
+                          !cell.isCurrentMonth &&
+                          "text-muted-foreground/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                      )}
+                    >
+                      {cell.day}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-2 flex justify-end border-t border-zinc-100 pt-2 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(hoyIso);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold text-brand hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10"
+                >
+                  Hoy
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <div className={cn("relative w-full", className)}>
+      <button
+        ref={triggerRef}
+        id={id}
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          modalInputBaseClass,
+          modalFieldClass,
+          "relative flex w-full cursor-pointer items-center pl-10 pr-3 text-left",
+        )}
+      >
+        <Calendar
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand dark:text-brand-bright"
+          aria-hidden
+        />
+        <span className={cn(!normalized && "text-muted-foreground")}>{display}</span>
+      </button>
+      {required && !normalized ? (
+        <input
+          tabIndex={-1}
+          className="pointer-events-none absolute h-0 w-0 opacity-0"
+          value=""
+          onChange={() => {}}
+          required
+        />
+      ) : null}
+      {panel}
+    </div>
+  );
+}
+
+export function ModalSwitch({
+  checked,
+  onCheckedChange,
+  id,
+  disabled,
+  className,
+  "aria-label": ariaLabel,
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  id?: string;
+  disabled?: boolean;
+  className?: string;
+  "aria-label"?: string;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) onCheckedChange(!checked);
+      }}
+      className={cn(
+        "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-zinc-400 bg-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/30 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-500 dark:bg-zinc-600",
+        checked &&
+          "border-brand bg-brand dark:border-brand-bright dark:bg-brand-bright",
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          "pointer-events-none block size-5 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform",
+          checked && "translate-x-[1.375rem]",
+        )}
+      />
+    </button>
+  );
+}
+
+export function ModalSwitchField({
+  label,
+  checked,
+  onCheckedChange,
+  disabled,
+  id,
+  className,
+}: {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  id?: string;
+  className?: string;
+}) {
+  return (
+    <ModalField className={className}>
+      <ModalLabel htmlFor={id}>{label}</ModalLabel>
+      <div
+        className={cn(
+          modalInputBaseClass,
+          modalFieldClass,
+          "flex items-center justify-between gap-3 px-3",
+        )}
+      >
+        <span className="truncate text-sm font-medium text-muted-foreground">
+          {checked ? "Sí" : "No"}
+        </span>
+        <ModalSwitch
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          disabled={disabled}
+          aria-label={label}
+        />
+      </div>
+    </ModalField>
   );
 }
 
@@ -593,7 +934,7 @@ export function ModalShell({
                     type="button"
                     onClick={onClose}
                     className={cn(
-                      "-mr-1 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-celeste-trifinio transition-colors hover:bg-celeste-trifinio/10",
+                      "-mr-1 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-brand transition-colors hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10",
                       headerActionsAlign === "start" && "ml-auto",
                     )}
                     aria-label="Cerrar"

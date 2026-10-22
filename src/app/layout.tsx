@@ -10,6 +10,7 @@ import { UserProvider } from "@/components/(base)/providers/UserProvider";
 import OfflineBanner from "@/components/OfflineBanner";
 import ObsToastContainer from "@/components/(base)/layout/ObsToastContainer";
 import { APP_LOGO_PATH, APP_NAME } from "@/lib/app-config";
+import { resolveUserRole } from "@/lib/user-role";
 
 // Fuentes y metadatos de la app
 
@@ -57,9 +58,13 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient();
   let user = null;
+  let initialProfileRole: string | null = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
+    if (user) {
+      initialProfileRole = await resolveUserRole(supabase, user);
+    }
   } catch (error) {
     console.error("Supabase auth error:", error);
   }
@@ -81,7 +86,7 @@ export default async function RootLayout({
             defaultTheme="dark"
             disableTransitionOnChange
           >
-            <UserProvider user={user}>
+            <UserProvider user={user} initialProfileRole={initialProfileRole}>
               <OfflineBanner />
               <EncabezadoApp />
               <main className="flex-1 w-full flex flex-col">

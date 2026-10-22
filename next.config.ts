@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
         destination: "/TheCarsPlace/:path*",
         permanent: true,
       },
+      {
+        source: "/TheCarsPlace/flota-vehicular",
+        destination: "/TheCarsPlace/vehiculos",
+        permanent: true,
+      },
+      {
+        source: "/TheCarsPlace/flota-vehicular/:path*",
+        destination: "/TheCarsPlace/vehiculos/:path*",
+        permanent: true,
+      },
     ];
   },
   images: {
@@ -34,6 +44,10 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
       },
     ],
   },
