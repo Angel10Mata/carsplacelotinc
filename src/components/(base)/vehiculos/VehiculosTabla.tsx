@@ -1,18 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
+import { Image as ImageNode, Images as ImagesNode } from "lucide";
 import {
   ChevronLeft,
   ChevronRight,
   EllipsisVertical,
-  Image as ImageIcon,
   Loader2,
   PenSquare,
   Plus,
   Search,
 } from "lucide-react";
+import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { cn } from "@/lib/utils";
+import {
+  SigetTablaPageSizeSelect,
+  type SigetTablaPageSizeValue,
+} from "@/components/ui/siget-tabla-page-size-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +31,6 @@ import {
   vehiculosTablaCardShellClass,
   vehiculosTablaCellDividerClass,
   vehiculosTablaHeadRowClass,
-  vehiculosTablaFotoThumbClass,
   vehiculosTablaPaginationBarClass,
   vehiculosTablaPaginationControlClass,
   vehiculosTablaSearchInputClass,
@@ -52,8 +55,9 @@ import type { VehiculoListRow } from "./lib/zod";
 
 const cellPad = "px-3 py-3.5";
 const cellPadEstrecho = "px-1.5 py-3.5";
+const cellPadFoto = "px-0 py-3.5";
 const marcaModeloCell = "pl-2.5 pr-4";
-const PAGE_SIZE_OPTIONS = [15, 30, 45] as const;
+type PageSize = SigetTablaPageSizeValue;
 
 function VehiculoFilaMenu({
   row,
@@ -67,18 +71,20 @@ function VehiculoFilaMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
           aria-label={`Acciones para ${row.placa}`}
         >
           <EllipsisVertical className="size-5" aria-hidden />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
+        side="left"
         align="end"
-        className="z-[200] border-border bg-white opacity-100 dark:border-zinc-700 dark:bg-zinc-900"
+        sideOffset={6}
+        className="z-[200] w-auto min-w-0 border-border bg-white p-1 opacity-100 dark:border-zinc-700 dark:bg-zinc-900"
       >
         <DropdownMenuItem
-          className="cursor-pointer font-semibold"
+          className="cursor-pointer gap-2 px-2.5 py-2 font-semibold"
           onSelect={() => onEditar()}
         >
           <PenSquare className="size-4 text-brand dark:text-brand-bright" />
@@ -96,37 +102,17 @@ function FotoCell({
   row: VehiculoListRow;
   onOpen: () => void;
 }) {
-  const hasPhotos = row.imageUrls.length > 0;
   return (
-    <button
-      type="button"
-      disabled={!hasPhotos}
+    <SigetActionButton
+      label="Ver"
+      iconOnly
+      accentColor={sigetAccent.abrir}
+      morphFrom={ImageNode}
+      morphTo={ImagesNode}
       onClick={onOpen}
-      className={cn(
-        vehiculosTablaFotoThumbClass,
-        "cursor-pointer border-0 bg-transparent p-0 transition-shadow",
-        hasPhotos &&
-          "hover:ring-2 hover:ring-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand dark:hover:ring-brand-bright/50 dark:focus-visible:ring-brand-bright",
-        !hasPhotos && "cursor-default opacity-80",
-      )}
-      aria-label={hasPhotos ? `Ver fotos de ${row.placa}` : `Sin fotos (${row.placa})`}
-    >
-      {row.fotoUrl ? (
-        <Image
-          src={row.fotoUrl}
-          alt=""
-          fill
-          unoptimized
-          className="object-cover"
-          sizes="48px"
-        />
-      ) : (
-        <ImageIcon
-          className={cn("size-5 opacity-70", vehiculosTablaAccentTextClass)}
-          aria-hidden
-        />
-      )}
-    </button>
+      className="shrink-0"
+      ariaLabel={`Ver fotos y factura de ${row.placa}`}
+    />
   );
 }
 
@@ -135,7 +121,7 @@ export function VehiculosTabla() {
   const [crearOpen, setCrearOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(15);
+  const [pageSize, setPageSize] = useState<PageSize>(15);
   const [galeriaRow, setGaleriaRow] = useState<VehiculoListRow | null>(null);
   const [editarCarId, setEditarCarId] = useState<string | null>(null);
 
@@ -155,10 +141,14 @@ export function VehiculosTabla() {
     });
   }, [vehiculos, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const pageSafe = Math.min(page, totalPages);
-  const rowOffset = (pageSafe - 1) * pageSize;
-  const pageItems = filtered.slice(rowOffset, rowOffset + pageSize);
+  const showAll = pageSize === "all";
+  const totalPages = showAll
+    ? 1
+    : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageSafe = showAll ? 1 : Math.min(page, totalPages);
+  const rowOffset = showAll ? 0 : (pageSafe - 1) * pageSize;
+  const sliceSize = showAll ? filtered.length : pageSize;
+  const pageItems = filtered.slice(rowOffset, rowOffset + sliceSize);
 
   return (
     <>
@@ -241,14 +231,14 @@ export function VehiculosTabla() {
 
         {!isLoading && !isError ? (
           <div className="w-full min-w-0 overflow-x-auto overflow-y-visible">
-          <table className="w-full table-fixed border-collapse text-base">
+          <table className="w-full table-auto border-collapse text-base">
             <colgroup>
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
-              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)} />
+              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)} />
             </colgroup>
             <thead>
@@ -264,8 +254,11 @@ export function VehiculosTabla() {
                   No.
                 </th>
                 <th
-                  className={cn(cellPad, vehiculosTablaCellDividerClass, "text-center")}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)}
+                  className={cn(
+                    cellPadEstrecho,
+                    vehiculosTablaCellDividerClass,
+                    "whitespace-nowrap text-center",
+                  )}
                 >
                   Factura
                 </th>
@@ -273,16 +266,11 @@ export function VehiculosTabla() {
                   className={cn(
                     cellPad,
                     vehiculosTablaCellDividerClass,
-                    "text-center",
+                    "w-0 whitespace-nowrap text-center",
                   )}
                   style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)}
                 >
-                  <span className="inline-flex flex-col items-center leading-tight">
-                    <span>Cliente</span>
-                    <span className="text-xs font-semibold normal-case text-muted-foreground">
-                      NIT
-                    </span>
-                  </span>
+                  Cliente
                 </th>
                 <th
                   className={cn(cellPad, vehiculosTablaCellDividerClass, "text-center")}
@@ -291,29 +279,33 @@ export function VehiculosTabla() {
                   VIN
                 </th>
                 <th
-                  className={cn(cellPad, vehiculosTablaCellDividerClass, "pr-2.5 text-center")}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
-                >
-                  Foto
-                </th>
-                <th
                   className={cn(
                     cellPad,
                     vehiculosTablaCellDividerClass,
-                    "text-center",
+                    "whitespace-nowrap text-center",
                   )}
                   style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)}
                 >
-                  <span className="inline-flex flex-col items-center leading-tight">
-                    <span>Marca</span>
-                    <span>Modelo</span>
-                  </span>
+                  Marca / Modelo
                 </th>
                 <th
-                  className={cn(cellPadEstrecho, "whitespace-nowrap text-center")}
+                  className={cn(
+                    cellPadFoto,
+                    vehiculosTablaCellDividerClass,
+                    "w-0 whitespace-nowrap text-center",
+                  )}
+                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                >
+                  Fotos
+                </th>
+                <th
+                  className={cn(
+                    cellPadEstrecho,
+                    "whitespace-nowrap text-center",
+                  )}
                   style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
                 >
-                  Acciones
+                  ACC
                 </th>
               </tr>
             </thead>
@@ -344,13 +336,12 @@ export function VehiculosTabla() {
                     </td>
                     <td
                       className={cn(
-                        cellPad,
+                        cellPadEstrecho,
                         vehiculosTablaCellDividerClass,
                         "whitespace-nowrap text-center align-middle",
                       )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)}
                     >
-                      <span className="inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-zinc-100 px-3 py-1 text-sm font-black uppercase tracking-wider text-foreground dark:bg-zinc-700">
+                      <span className="inline-flex w-max max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-zinc-100 px-2.5 py-1 text-sm font-black uppercase tracking-wider text-foreground dark:bg-zinc-700">
                         {row.placa}
                       </span>
                     </td>
@@ -358,21 +349,14 @@ export function VehiculosTabla() {
                       className={cn(
                         cellPad,
                         vehiculosTablaCellDividerClass,
-                        "align-middle text-left",
+                        "w-0 max-w-[min(100%,42rem)] align-middle text-left whitespace-nowrap",
                         marcaModeloCell,
                       )}
                       style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)}
                     >
                       {row.clienteNombre ? (
-                        <span className="inline-flex max-w-full flex-col items-start gap-0.5 leading-snug">
-                          <span className="break-words font-semibold text-foreground">
-                            {row.clienteNombre}
-                          </span>
-                          {row.clienteNit ? (
-                            <span className="truncate text-sm tabular-nums text-muted-foreground">
-                              NIT {row.clienteNit}
-                            </span>
-                          ) : null}
+                        <span className="font-semibold text-foreground">
+                          {row.clienteNombre}
                         </span>
                       ) : (
                         <span className="text-sm text-muted-foreground">—</span>
@@ -387,19 +371,6 @@ export function VehiculosTabla() {
                       style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)}
                     >
                       {row.vin ?? "—"}
-                    </td>
-                    <td
-                      className={cn(
-                        cellPad,
-                        vehiculosTablaCellDividerClass,
-                        "pr-2.5 text-center align-middle",
-                      )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
-                    >
-                      <FotoCell
-                        row={row}
-                        onOpen={() => setGaleriaRow(row)}
-                      />
                     </td>
                     <td
                       className={cn(
@@ -421,15 +392,32 @@ export function VehiculosTabla() {
                     </td>
                     <td
                       className={cn(
+                        cellPadFoto,
+                        vehiculosTablaCellDividerClass,
+                        "w-0 whitespace-nowrap align-middle text-center",
+                      )}
+                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                    >
+                      <div className="flex justify-center">
+                        <FotoCell
+                          row={row}
+                          onOpen={() => setGaleriaRow(row)}
+                        />
+                      </div>
+                    </td>
+                    <td
+                      className={cn(
                         cellPadEstrecho,
-                        "whitespace-nowrap text-center align-middle",
+                        "whitespace-nowrap align-middle text-center",
                       )}
                       style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
                     >
-                      <VehiculoFilaMenu
-                        row={row}
-                        onEditar={() => setEditarCarId(row.id)}
-                      />
+                      <div className="flex justify-center">
+                        <VehiculoFilaMenu
+                          row={row}
+                          onEditar={() => setEditarCarId(row.id)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -441,21 +429,13 @@ export function VehiculosTabla() {
 
         {!isLoading && !isError && filtered.length > 0 ? (
           <div className={vehiculosTablaPaginationBarClass}>
-            <select
+            <SigetTablaPageSizeSelect
               value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
+              onChange={(next) => {
+                setPageSize(next);
                 setPage(1);
               }}
-              className="h-9 rounded-lg border border-border bg-background px-2 text-sm font-bold dark:border-zinc-700"
-              aria-label="Filas por página"
-            >
-              {PAGE_SIZE_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+            />
             <button
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}

@@ -29,7 +29,7 @@ if (!url) {
   process.exit(1);
 }
 
-console.log("Bucket requerido: cars-images");
+console.log("Buckets: cars-images (200 KB), Facturas (10 MB PDF)");
 console.log("");
 console.log(
   "La forma más fiable es ejecutar el SQL en el panel de Supabase:",
@@ -55,49 +55,45 @@ const headers = {
   apikey: serviceKey,
   "Content-Type": "application/json",
 };
-const bucketBody = {
-  id: "cars-images",
-  name: "cars-images",
-  public: true,
-  file_size_limit: 5242880,
-};
 
-const res = await fetch(`${base}/storage/v1/bucket`, {
-  method: "POST",
-  headers,
-  body: JSON.stringify(bucketBody),
-});
+const buckets = [
+  { id: "cars-images", name: "cars-images", public: true, file_size_limit: 204800 },
+  { id: "Facturas", name: "Facturas", public: true, file_size_limit: 10485760 },
+];
 
-const body = await res.text();
-if (res.ok) {
-  console.log(
-    "Bucket cars-images creado (límite 5 MB). Ejecuta las políticas RLS del SQL en el editor.",
-  );
-  process.exit(0);
-}
-
-if (body.includes("already exists") || body.includes("Duplicate")) {
-  const patch = await fetch(`${base}/storage/v1/bucket/cars-images`, {
-    method: "PUT",
+async function upsertBucket(spec) {
+  const res = await fetch(`${base}/storage/v1/bucket`, {
+    method: "POST",
     headers,
-    body: JSON.stringify({
-      public: true,
-      file_size_limit: 5242880,
-    }),
+    body: JSON.stringify(spec),
   });
-  const patchBody = await patch.text();
-  if (patch.ok) {
-    console.log(
-      "Bucket cars-images actualizado: público y límite 5 MB. Ejecuta db/storage-cars.sql para las políticas RLS.",
-    );
-    process.exit(0);
+  const body = await res.text();
+  if (res.ok) {
+    console.log(`Bucket ${spec.id} creado.`);
+    return;
   }
-  console.warn("No se pudo actualizar el límite por API:", patch.status, patchBody);
-  console.log(
-    "Ejecuta db/storage-cars.sql en Supabase SQL Editor (actualiza file_size_limit).",
-  );
-  process.exit(0);
+  if (body.includes("already exists") || body.includes("Duplicate")) {
+    const patch = await fetch(`${base}/storage/v1/bucket/${encodeURIComponent(spec.id)}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        public: spec.public,
+        file_size_limit: spec.file_size_limit,
+      }),
+    });
+    const patchBody = await patch.text();
+    if (patch.ok) {
+      console.log(`Bucket ${spec.id} actualizado.`);
+      return;
+    }
+    console.warn(`No se pudo actualizar ${spec.id}:`, patch.status, patchBody);
+    return;
+  }
+  console.error(`No se pudo crear ${spec.id}:`, res.status, body);
 }
 
-console.error("No se pudo crear el bucket por API:", res.status, body);
-console.error("Ejecuta db/storage-cars.sql en Supabase SQL Editor.");
+for (const spec of buckets) {
+  await upsertBucket(spec);
+}
+
+console.log("Ejecuta db/storage-cars.sql para las políticas RLS de ambos buckets.");

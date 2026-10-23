@@ -5,6 +5,12 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig: NextConfig = {
   // React Compiler en dev compila mucho y suele dejar el overlay en "Compiling" minutos u horas.
   reactCompiler: isProd,
+  experimental: {
+    serverActions: {
+      // Fotos (comprimidas) y PDF de factura hasta 10 MB vía FormData en uploadCarImageStorageAction.
+      bodySizeLimit: "11mb",
+    },
+  },
   async redirects() {
     return [
       {

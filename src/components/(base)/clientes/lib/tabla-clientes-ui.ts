@@ -1,3 +1,31 @@
+import type { CSSProperties } from "react";
+
+export type ClientesTablaColAncho = {
+  width: string;
+  minWidth?: string;
+  maxWidth?: string;
+};
+
+export function clientesTablaColAnchoStyle(
+  col: ClientesTablaColAncho,
+): CSSProperties {
+  return {
+    width: col.width,
+    minWidth: col.minWidth,
+    maxWidth: col.maxWidth,
+  };
+}
+
+export const clientesTablaAnchoNo: ClientesTablaColAncho = {
+  width: "3rem",
+  maxWidth: "3rem",
+};
+
+export const clientesTablaAnchoAcciones: ClientesTablaColAncho = {
+  width: "3rem",
+  maxWidth: "3rem",
+};
+
 export const clientesTablaAccentBarClass = "h-1 w-full shrink-0 bg-brand";
 
 export const clientesTablaCardShellClass =
@@ -25,7 +53,7 @@ export const clientesTablaAddOutlineButtonClass =
   "inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-brand bg-transparent px-4 text-xs font-bold text-brand shadow-none transition-colors hover:bg-brand/10 dark:border-brand-bright dark:text-brand-bright dark:hover:bg-brand-bright/10 max-lg:w-full max-lg:text-sm";
 
 export const clientesTablaHeadRowClass =
-  "border-b border-border bg-zinc-100 text-[10px] font-bold uppercase tracking-widest text-brand dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-brand-bright";
+  "border-b border-border bg-zinc-100 text-xs font-bold uppercase tracking-widest text-brand dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-brand-bright";
 
 export const clientesTablaBodyRowClass =
   "border-b border-border transition-colors last:border-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/40";
@@ -33,8 +61,11 @@ export const clientesTablaBodyRowClass =
 export const clientesTablaCellDividerClass =
   "border-r border-border dark:border-zinc-800";
 
+export const clientesTablaAccentTextClass =
+  "text-brand dark:text-brand-bright";
+
 export const clientesTablaPaginationBarClass =
   "flex h-[3.5625rem] shrink-0 flex-wrap items-center justify-center gap-3 border-t border-border px-4 text-muted-foreground dark:border-zinc-700";
 
 export const clientesTablaPaginationControlClass =
-  "inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800";
+  "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-0 text-brand transition-colors hover:bg-brand/10 disabled:cursor-not-allowed disabled:opacity-40 dark:text-brand-bright dark:hover:bg-brand-bright/10";

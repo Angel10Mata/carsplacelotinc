@@ -2,8 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { APP_BASE_PATH } from "@/lib/app-config";
+import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-import { crearCustomerSchema, customerRowSchema, type CustomerRow } from "./zod";
+import { carRowSchema } from "@/components/(base)/vehiculos/lib/zod";
+import { mapCarRowToClienteVehiculoItem } from "./helpers";
+import {
+  actualizarCustomerSchema,
+  crearCustomerSchema,
+  customerRowSchema,
+  type CustomerRow,
+} from "./zod";
+
+const customerIdParamSchema = z.string().uuid();
 
 function revalidateCustomerPaths() {
   revalidatePath(`${APP_BASE_PATH}/clientes`);
@@ -90,6 +100,84 @@ export async function crearCustomerAction(raw: unknown) {
 
     revalidateCustomerPaths();
     return { ok: true as const, data: row.data };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
+export async function actualizarCustomerAction(raw: unknown) {
+  const parsed = actualizarCustomerSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false as const, code: "VALIDATION" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const payload = {
+      customer_name: parsed.data.customer_name,
+      customer_nit: parsed.data.customer_nit?.trim() || null,
+      customer_address: parsed.data.customer_address?.trim() || null,
+    };
+
+    const { data, error } = await supabase
+      .from("customers")
+      .update(payload)
+      .eq("id", parsed.data.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("actualizarCustomer:", error.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    const row = customerRowSchema.safeParse(data);
+    if (!row.success) {
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    revalidateCustomerPaths();
+    return { ok: true as const, data: row.data };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
+export async function listCarsByCustomerAction(rawCustomerId: unknown) {
+  const parsedId = customerIdParamSchema.safeParse(rawCustomerId);
+  if (!parsedId.success) {
+    return { ok: false as const, code: "VALIDATION" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const { data, error } = await supabase
+      .from("cars")
+      .select("*")
+      .eq("customer_id", parsedId.data)
+      .order("invoice_number", { ascending: true });
+
+    if (error) {
+      console.error("listCarsByCustomer:", error.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    const items = (data ?? [])
+      .map((row) => carRowSchema.safeParse(row))
+      .filter((r) => r.success)
+      .map((r) => mapCarRowToClienteVehiculoItem(r.data));
+
+    return { ok: true as const, data: items };
   } catch {
     return { ok: false as const, code: "UNKNOWN" };
   }

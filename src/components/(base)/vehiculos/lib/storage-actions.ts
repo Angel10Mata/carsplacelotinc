@@ -4,8 +4,10 @@ import { mensajeSiServiceRoleKeyInvalida } from "@/lib/supabase-service-role-env
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
-  CARS_IMAGE_BUCKET,
-  isValidCarImageStoragePath,
+  CAR_IMAGE_MAX_BYTES,
+  CAR_PDF_MAX_BYTES,
+  carMediaStorageBucketForPath,
+  isValidCarMediaStoragePath,
 } from "./car-images";
 import { classifyStorageError } from "./storage-messages";
 
@@ -38,18 +40,28 @@ export async function uploadCarImageStorageAction(formData: FormData) {
     return { ok: false as const, code: "VALIDATION" as const };
   }
 
-  if (!isValidCarImageStoragePath(path)) {
+  const pathTrim = path.trim();
+  if (!isValidCarMediaStoragePath(pathTrim)) {
     return { ok: false as const, code: "VALIDATION" as const };
   }
 
+  const isPdf = pathTrim.endsWith(".pdf");
+  if (isPdf && file.size > CAR_PDF_MAX_BYTES) {
+    return { ok: false as const, code: "STORAGE_SIZE" as const };
+  }
+  if (!isPdf && file.size > CAR_IMAGE_MAX_BYTES) {
+    return { ok: false as const, code: "STORAGE_SIZE" as const };
+  }
+
+  const bucket = carMediaStorageBucketForPath(pathTrim);
   const admin = storageClient();
   const supabase = admin ?? (await createClient());
 
   const { error: uploadError } = await supabase.storage
-    .from(CARS_IMAGE_BUCKET)
-    .upload(path.trim(), file, {
+    .from(bucket)
+    .upload(pathTrim, file, {
       upsert: false,
-      contentType: "image/jpeg",
+      contentType: isPdf ? "application/pdf" : "image/jpeg",
     });
 
   if (uploadError) {
@@ -62,9 +74,10 @@ export async function uploadCarImageStorageAction(formData: FormData) {
   }
 
   if (typeof replacePath === "string" && replacePath.trim()) {
+    const replaceTrim = replacePath.trim();
     await supabase.storage
-      .from(CARS_IMAGE_BUCKET)
-      .remove([replacePath.trim()]);
+      .from(carMediaStorageBucketForPath(replaceTrim))
+      .remove([replaceTrim]);
   }
 
   return { ok: true as const, path: path.trim() };
@@ -85,7 +98,7 @@ export async function removeCarImageStorageAction(path: string) {
   const supabase = admin ?? (await createClient());
 
   const { error } = await supabase.storage
-    .from(CARS_IMAGE_BUCKET)
+    .from(carMediaStorageBucketForPath(trimmed))
     .remove([trimmed]);
 
   if (error) {

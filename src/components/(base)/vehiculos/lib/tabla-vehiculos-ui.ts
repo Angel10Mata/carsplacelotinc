@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 export type VehiculosTablaColAncho = {
-  width: string;
+  width?: string;
   minWidth?: string;
   maxWidth?: string;
 };
@@ -22,34 +22,35 @@ export const vehiculosTablaAnchoNo: VehiculosTablaColAncho = {
 };
 
 export const vehiculosTablaAnchoFactura: VehiculosTablaColAncho = {
-  width: "11rem",
-  minWidth: "9.5rem",
+  width: "148px",
+  minWidth: "148px",
+  maxWidth: "148px",
 };
 
 export const vehiculosTablaAnchoCliente: VehiculosTablaColAncho = {
-  width: "22%",
-  minWidth: "16rem",
+  width: "1%",
 };
 
 export const vehiculosTablaAnchoVin: VehiculosTablaColAncho = {
-  width: "9.75rem",
-  minWidth: "9rem",
-  maxWidth: "9.75rem",
+  width: "10.75rem",
+  minWidth: "10.25rem",
+  maxWidth: "11rem",
 };
 
 export const vehiculosTablaAnchoFoto: VehiculosTablaColAncho = {
-  width: "5.5rem",
-  maxWidth: "5.5rem",
+  width: "3rem",
+  maxWidth: "3rem",
 };
 
 export const vehiculosTablaAnchoMarcaModelo: VehiculosTablaColAncho = {
-  width: "22%",
-  minWidth: "12rem",
+  width: "15.5rem",
+  minWidth: "11rem",
+  maxWidth: "16.5rem",
 };
 
 export const vehiculosTablaAnchoAcciones: VehiculosTablaColAncho = {
-  width: "5.25rem",
-  maxWidth: "5.25rem",
+  width: "3rem",
+  maxWidth: "3rem",
 };
 
 export const vehiculosTablaAccentBarClass = "h-1 w-full shrink-0 bg-brand";

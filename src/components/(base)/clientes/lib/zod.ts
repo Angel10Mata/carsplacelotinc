@@ -18,9 +18,24 @@ export const crearCustomerSchema = z.object({
 
 export type CrearCustomerInput = z.infer<typeof crearCustomerSchema>;
 
+export const actualizarCustomerSchema = crearCustomerSchema.extend({
+  id: z.string().uuid(),
+});
+
+export type ActualizarCustomerInput = z.infer<typeof actualizarCustomerSchema>;
+
 export type ClienteListRow = {
   id: string;
   nombre: string;
   nit: string | null;
   direccion: string | null;
+};
+
+export type ClienteVehiculoItem = {
+  id: string;
+  placa: string;
+  marca: string;
+  modelo: string;
+  vin: string | null;
+  estado: string | null;
 };

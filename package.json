@@ -49,6 +49,7 @@
     "react-dom": "19.2.3",
     "react-easy-crop": "^6.0.2",
     "react-hook-form": "^7.71.1",
+    "react-pdf": "^11.0.0",
     "react-phone-number-input": "^3.4.17",
     "react-qrcode-logo": "^4.1.0",
     "react-toastify": "^11.0.3",

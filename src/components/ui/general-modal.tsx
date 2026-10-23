@@ -217,8 +217,13 @@ export function ModalFechaCalendario({
   className?: string;
 }) {
   const normalized = normalizarFechaCalendario(value);
+  const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setInputValue(formatFechaManualGt(value));
+  }, [value]);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 280 });
 
@@ -277,7 +282,43 @@ export function ModalFechaCalendario({
 
   const cells = obtenerDiasDelMes(navMonth, navYear);
   const hoyIso = fechaCalendarioGt();
-  const display = normalized ? formatFechaManualGt(normalized) : "Seleccionar fecha";
+
+  const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let digits = e.target.value.replace(/\D/g, "");
+    if (digits.length > 8) digits = digits.slice(0, 8);
+
+    let formatted = digits;
+    if (digits.length > 2 && digits.length <= 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    } else if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    }
+
+    setInputValue(formatted);
+
+    if (formatted.length === 10) {
+      const parsed = parseFechaManualGt(formatted);
+      if (parsed) onChange(parsed);
+      return;
+    }
+
+    if (formatted === "") onChange("");
+  };
+
+  const handleManualBlur = () => {
+    if (inputValue.length === 0) {
+      onChange("");
+      return;
+    }
+    if (inputValue.length === 10) {
+      const parsed = parseFechaManualGt(inputValue);
+      if (parsed) {
+        onChange(parsed);
+        return;
+      }
+    }
+    setInputValue(formatFechaManualGt(value));
+  };
 
   const panel =
     open && typeof document !== "undefined"
@@ -398,34 +439,31 @@ export function ModalFechaCalendario({
 
   return (
     <div className={cn("relative w-full", className)}>
-      <button
-        ref={triggerRef}
-        id={id}
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          modalInputBaseClass,
-          modalFieldClass,
-          "relative flex w-full cursor-pointer items-center pl-10 pr-3 text-left",
-        )}
-      >
-        <Calendar
-          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand dark:text-brand-bright"
-          aria-hidden
+      <div className="relative flex w-full items-center">
+        <ModalInput
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="DD/MM/AAAA"
+          value={inputValue}
+          onChange={handleManualChange}
+          onBlur={handleManualBlur}
+          required={required}
+          className="w-full pr-11"
         />
-        <span className={cn(!normalized && "text-muted-foreground")}>{display}</span>
-      </button>
-      {required && !normalized ? (
-        <input
-          tabIndex={-1}
-          className="pointer-events-none absolute h-0 w-0 opacity-0"
-          value=""
-          onChange={() => {}}
-          required
-        />
-      ) : null}
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-label="Abrir calendario"
+          onClick={() => setOpen((v) => !v)}
+          className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand transition-colors hover:bg-zinc-100 dark:text-brand-bright dark:hover:bg-zinc-800"
+        >
+          <Calendar className="size-4" aria-hidden />
+        </button>
+      </div>
       {panel}
     </div>
   );
@@ -870,7 +908,7 @@ export function ModalShell({
               fullHeight &&
                 cn(
                   "max-md:h-dvh max-md:min-h-0 max-md:flex-1 max-md:max-w-none",
-                  "md:mx-auto md:h-auto md:max-h-[calc(100dvh-2rem)] md:w-full",
+                  "md:mx-auto md:h-[calc(100dvh-2rem)] md:max-h-[calc(100dvh-2rem)] md:w-full",
                   maxWidth,
                 ),
               !fullscreen &&
@@ -883,7 +921,7 @@ export function ModalShell({
               className={cn(
                 fullscreen &&
                   "rounded-none border-0 shadow-none dark:bg-zinc-900 md:rounded-none",
-                fullHeight && "max-md:h-full md:h-auto",
+                fullHeight && "max-md:h-full md:h-full md:min-h-0",
               )}
             >
               <div

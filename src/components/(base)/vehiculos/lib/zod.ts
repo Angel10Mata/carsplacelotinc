@@ -71,11 +71,17 @@ export type VehiculoListRow = {
   vin: string | null;
   fotoUrl: string | null;
   imageUrls: string[];
+  hasUploadedPdf: boolean;
   marca: string;
   modelo: string;
   precio: number | null;
+  subTotal: number;
+  total: number;
+  terms: string;
+  incoterms: string | null;
   estado: string | null;
   invoiceDate: string;
   clienteNombre: string | null;
   clienteNit: string | null;
+  clienteDireccion: string | null;
 };

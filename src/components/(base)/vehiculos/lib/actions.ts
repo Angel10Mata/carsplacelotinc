@@ -25,48 +25,6 @@ function resolveRegisteredBy(user: {
   return user.email?.split("@")[0] ?? "Usuario";
 }
 
-function parseNumericCarId(value: string | null | undefined): number | null {
-  if (!value?.trim()) return null;
-  const n = Number(value.trim());
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-export async function allocateCarStorageFolderAction() {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return { ok: false as const, code: "UNAUTHORIZED" as const };
-
-    const { data, error } = await supabase.from("cars").select("car_id");
-    if (error) {
-      console.error("allocateCarStorageFolder:", error.message);
-      return { ok: false as const, code: "DB_ERROR" as const };
-    }
-
-    const usedFolderIds = new Set<string>();
-    let maxNumeric = 0;
-    for (const row of data ?? []) {
-      const raw = row.car_id;
-      if (typeof raw !== "string" || !raw.trim()) continue;
-      const id = raw.trim();
-      usedFolderIds.add(id);
-      const n = parseNumericCarId(id);
-      if (n !== null) maxNumeric = Math.max(maxNumeric, n);
-    }
-
-    let next = maxNumeric > 0 ? maxNumeric + 1 : 1;
-    while (usedFolderIds.has(String(next))) {
-      next += 1;
-    }
-
-    return { ok: true as const, carFolderId: String(next) };
-  } catch {
-    return { ok: false as const, code: "UNKNOWN" as const };
-  }
-}
-
 export async function listCarsAction() {
   try {
     const supabase = await createClient();
@@ -78,7 +36,7 @@ export async function listCarsAction() {
     const { data, error } = await supabase
       .from("cars")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (error) {
       console.error("listCars:", error.message);

@@ -27,12 +27,13 @@ import {
 } from "../lib/action-errors";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { cn } from "@/lib/utils";
-import { allocateCarStorageFolderAction } from "../lib/actions";
 import { useCrearCar } from "../lib/hooks";
 import {
+  carStorageFolderFromMarcaModeloInput,
   DEFAULT_CAR_INCOTERMS,
   DEFAULT_CAR_STATUS,
   DEFAULT_CAR_TERMS,
+  folderFromCarMediaStoragePath,
   parseMarcaModeloInput,
 } from "../lib/helpers";
 import { BuscarClienteField } from "./BuscarClienteField";
@@ -67,7 +68,7 @@ function WizardProgress({ step }: { step: number }) {
     <div className="shrink-0 space-y-1.5">
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
         Paso {step} de {WIZARD_STEPS} ·{" "}
-        {step === 1 ? "Datos del vehículo" : "Imágenes"}
+        {step === 1 ? "Datos del vehículo" : "Imágenes y PDF"}
       </p>
       <div className="flex gap-1.5">
         {Array.from({ length: WIZARD_STEPS }, (_, i) => (
@@ -135,7 +136,6 @@ export default function CrearVehiculoModal({
   const [carStorageFolderId, setCarStorageFolderId] = useState<string | null>(
     null,
   );
-  const [allocatingFolder, setAllocatingFolder] = useState(false);
   const [imagesBusy, setImagesBusy] = useState(false);
   const [total, setTotal] = useState("");
   const [terms, setTerms] = useState(DEFAULT_CAR_TERMS);
@@ -153,7 +153,6 @@ export default function CrearVehiculoModal({
     setCarPrice("");
     setCarImagePaths([]);
     setCarStorageFolderId(null);
-    setAllocatingFolder(false);
     setImagesBusy(false);
     setTotal("");
     setTerms(DEFAULT_CAR_TERMS);
@@ -192,19 +191,21 @@ export default function CrearVehiculoModal({
     ) {
       return;
     }
-    if (!carStorageFolderId) {
-      setAllocatingFolder(true);
-      try {
-        const result = await allocateCarStorageFolderAction();
-        if (!result.ok) {
-          toast.error("No se pudo asignar el ID del vehículo.");
-          return;
-        }
-        setCarStorageFolderId(result.carFolderId);
-      } finally {
-        setAllocatingFolder(false);
+    const folderFromMarca = carStorageFolderFromMarcaModeloInput(marcaModelo);
+    if (!folderFromMarca) {
+      toast.warn("Indica marca y modelo para crear la carpeta en Storage.");
+      return;
+    }
+    if (carImagePaths.length > 0) {
+      const folderFromPaths = folderFromCarMediaStoragePath(carImagePaths[0] ?? "");
+      if (folderFromPaths && folderFromPaths !== folderFromMarca) {
+        toast.warn(
+          "Ya hay archivos subidos. Quita las miniaturas antes de cambiar marca/modelo.",
+        );
+        return;
       }
     }
+    setCarStorageFolderId(folderFromMarca);
     setStep(2);
   };
 
@@ -367,22 +368,6 @@ export default function CrearVehiculoModal({
         ) : (
           <div className={cn(vehiculosWizardStepBodyClass, "gap-2.5")}>
             <SectionTitle>Fotografías del vehículo</SectionTitle>
-            <p className="text-sm text-muted-foreground">
-              {carStorageFolderId ? (
-                <>
-                  Vehículo{" "}
-                  <span className="font-bold text-foreground">
-                    #{carStorageFolderId}
-                  </span>
-                  {" · "}
-                  fotos en carpeta{" "}
-                  <span className="font-mono text-xs">{carStorageFolderId}/</span>
-                  . Se comprimen si superan 200 KB. La primera es la principal.
-                </>
-              ) : (
-                "Asignando carpeta del vehículo…"
-              )}
-            </p>
             <VehiculoFotosGaleria
               storageFolderId={carStorageFolderId}
               paths={carImagePaths}
@@ -403,7 +388,7 @@ export default function CrearVehiculoModal({
                 morphTo={ArrowRight as IconNode}
                 morphOnHover={false}
                 onClick={() => void goNext()}
-                disabled={allocatingFolder}
+                disabled={pending}
                 ariaLabel="Continuar al paso de imágenes"
                 className="w-auto shrink-0"
               />

@@ -11,14 +11,16 @@ export function VerVehiculos() {
         "min-h-0 pt-3 pb-8 md:pt-2 mt-0",
       )}
     >
-      <div className="flex flex-col gap-1 mb-2">
-        <div className="flex items-center gap-3">
-          <ModuleHeaderBackButton />
-          <h1 className="text-lg md:text-xl font-black uppercase tracking-tight text-foreground">
-            Gestión de vehículos
-          </h1>
+      <header className="mb-4 md:mb-5">
+        <div className="flex items-start gap-3 sm:items-center">
+          <ModuleHeaderBackButton className="mt-0.5 sm:mt-0" />
+          <div className="min-w-0 flex-1 border-l-4 border-brand py-1 pl-4 dark:border-brand-bright">
+            <h1 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl leading-[1.05]">
+              Gestión de vehículos
+            </h1>
+          </div>
         </div>
-      </div>
+      </header>
 
       <VehiculosTabla />
     </div>

@@ -29,13 +29,13 @@ export function carStorageErrorMessage(
     return "Storage sin permisos. En Supabase → SQL Editor ejecuta db/storage-cars.sql.";
   }
   if (code === "STORAGE_BUCKET") {
-    return "No existe el bucket «cars-images». Ejecuta db/storage-cars.sql en Supabase.";
+    return "No existe el bucket «cars-images» o «Facturas». Ejecuta db/storage-cars.sql en Supabase.";
   }
   if (code === "STORAGE_DUPLICATE") {
     return "Esa ruta ya tiene una foto (p. ej. 1/1.jpg). Quita una miniatura o usa otra carpeta.";
   }
   if (code === "STORAGE_SIZE") {
-    return "La imagen supera el límite del bucket cars-images. Vuelve a ejecutar db/storage-cars.sql en Supabase o usa una foto más pequeña.";
+    return "El archivo supera el límite del bucket (fotos 200 KB en cars-images, PDF 10 MB en Facturas).";
   }
   if (code === "UNAUTHORIZED") {
     return "Inicia sesión para subir imágenes.";
