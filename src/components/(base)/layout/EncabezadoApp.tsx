@@ -15,6 +15,8 @@ import { getPendingDevicesCount } from "@/components/(base)/admin/lib/actions";
 import { createPortal } from "react-dom";
 import AnimacionLogo from "@/components/(base)/brand/AnimacionLogo";
 import { HeaderBrand } from "@/components/(base)/brand/HeaderBrand";
+import { NavPublicoEnlaces } from "@/components/(base)/inventario-publico/NavPublicoEnlaces";
+import { PUBLIC_CATALOG_PATH } from "@/lib/app-config";
 
 export default function EncabezadoApp() {
   const user = useUser();
@@ -26,9 +28,11 @@ export default function EncabezadoApp() {
   const [refreshSpinning, setRefreshSpinning] = useState(false);
   const [refreshRotation, setRefreshRotation] = useState(0);
   const pathname = usePathname();
-  const isLoginPage = pathname === "/" || pathname === "/login";
-  const showBreadcrumb = Boolean(user) && !isLoginPage;
-  const showHamburger = Boolean(user);
+  const isInventarioPage = pathname === PUBLIC_CATALOG_PATH;
+  const isPublicCatalog = isInventarioPage && !user;
+  const isLoginPage = pathname === "/login";
+  const showBreadcrumb = Boolean(user) && !isLoginPage && !isPublicCatalog;
+  const showHamburger = Boolean(user) && !isPublicCatalog;
   const headerRef = useRef<HTMLElement | null>(null);
   const canManage = ["super", "admin"].includes(effectiveRole);
 
@@ -41,6 +45,12 @@ export default function EncabezadoApp() {
   }, [canManage]);
 
   useLayoutEffect(() => {
+    if (isPublicCatalog) {
+      document.documentElement.style.setProperty("--app-header-height", "0px");
+      return () => {
+        document.documentElement.style.removeProperty("--app-header-height");
+      };
+    }
     const header = headerRef.current;
     if (!header) return;
     const sync = () => {
@@ -56,13 +66,15 @@ export default function EncabezadoApp() {
       observer.disconnect();
       document.documentElement.style.removeProperty("--app-header-height");
     };
-  }, [showBreadcrumb, pathname]);
+  }, [isPublicCatalog, showBreadcrumb, isInventarioPage, pathname]);
 
   const handleRefresh = () => {
     if (refreshSpinning) return;
     setRefreshSpinning(true);
     setRefreshRotation((rotation) => rotation + 360);
   };
+
+  if (isPublicCatalog) return null;
 
   return (
     <>
@@ -71,11 +83,11 @@ export default function EncabezadoApp() {
         className="relative z-[100] w-full shrink-0 border-b border-border/40 bg-zinc-100 shadow-sm transition-all dark:bg-zinc-800"
       >
         <div className="mx-auto flex min-h-[var(--header-row-height)] flex-col px-1 py-1 md:px-2.5">
-          <div className="flex w-full items-center justify-between gap-2 py-2.5 md:py-0">
+          <div className="flex w-full items-center gap-2 py-2.5 md:py-0">
             <button
               type="button"
               onClick={() => setIsFullScreen(true)}
-              className="flex min-w-0 cursor-pointer items-center transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              className="flex min-w-0 shrink-0 cursor-pointer items-center transition-transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <motion.span
                 initial={{ opacity: 0, y: -12 }}
@@ -86,6 +98,15 @@ export default function EncabezadoApp() {
                 <HeaderBrand compact />
               </motion.span>
             </button>
+
+            <div className="flex min-w-0 flex-1 items-center justify-center px-2">
+              {mounted && isInventarioPage ? (
+                <NavPublicoEnlaces
+                  observerMode="app-header"
+                  className="hidden items-center justify-center gap-6 overflow-x-auto md:flex lg:gap-8 xl:gap-10"
+                />
+              ) : null}
+            </div>
 
             <div className="flex shrink-0 items-center gap-2.5 md:gap-4">
               <AnimatedThemeToggler />
@@ -141,6 +162,13 @@ export default function EncabezadoApp() {
               )}
             </div>
           </div>
+
+          {mounted && isInventarioPage ? (
+            <NavPublicoEnlaces
+              observerMode="app-header"
+              className="flex w-full items-center justify-center gap-5 overflow-x-auto border-t border-border/40 px-3 py-2.5 md:hidden"
+            />
+          ) : null}
 
           {showBreadcrumb ? (
             <div className="min-w-0 w-full px-1 py-2.5 md:py-0 md:pb-0.5 md:pt-0.5">

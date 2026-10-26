@@ -1,10 +1,16 @@
-import { Suspense } from "react";
-import IniciarSesion from "@/components/(base)/(auth)/login/IniciarSesion";
+import { redirect } from "next/navigation";
+import { APP_BASE_PATH, PUBLIC_CATALOG_PATH } from "@/lib/app-config";
+import { createClient } from "@/utils/supabase/server";
 
-export default function Home() {
-  return (
-    <Suspense fallback={null}>
-      <IniciarSesion />
-    </Suspense>
-  );
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect(APP_BASE_PATH);
+  }
+
+  redirect(PUBLIC_CATALOG_PATH);
 }

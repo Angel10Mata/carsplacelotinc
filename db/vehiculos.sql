@@ -39,3 +39,6 @@ create policy "Acceso total autenticados customers"
 
 create policy "Acceso total autenticados cars"
   on public.cars for all to authenticated using (true) with check (true);
+
+create policy "Lectura publica catalogo cars"
+  on public.cars for select to anon, authenticated using (true);

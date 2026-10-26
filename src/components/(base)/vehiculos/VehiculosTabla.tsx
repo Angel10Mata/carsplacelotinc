@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Image as ImageNode, Images as ImagesNode } from "lucide";
 import {
@@ -8,9 +9,11 @@ import {
   EllipsisVertical,
   Loader2,
   PenSquare,
+  LayoutGrid,
   Plus,
   Search,
 } from "lucide-react";
+import { PUBLIC_CATALOG_PATH } from "@/lib/app-config";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { cn } from "@/lib/utils";
 import {
@@ -35,6 +38,7 @@ import {
   vehiculosTablaPaginationControlClass,
   vehiculosTablaSearchInputClass,
   vehiculosTablaToolbarButtonsClass,
+  vehiculosTablaToolbarButtonsMobileGridClass,
   vehiculosTablaToolbarFiltersClass,
   vehiculosTablaToolbarGridClass,
   vehiculosTablaToolbarSectionClass,
@@ -203,9 +207,17 @@ export function VehiculosTabla() {
             <div
               className={cn(
                 vehiculosTablaToolbarButtonsClass,
+                vehiculosTablaToolbarButtonsMobileGridClass,
                 "min-w-0 w-full max-lg:col-span-full",
               )}
             >
+              <Link
+                href={PUBLIC_CATALOG_PATH}
+                className={vehiculosTablaAddOutlineButtonClass}
+              >
+                <LayoutGrid className="size-4 shrink-0" aria-hidden />
+                Inventario
+              </Link>
               <button
                 type="button"
                 className={vehiculosTablaAddOutlineButtonClass}

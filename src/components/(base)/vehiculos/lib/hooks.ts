@@ -9,6 +9,7 @@ import {
   listCarsAction,
 } from "./actions";
 import { VehiculoActionError } from "./action-errors";
+import { publicInventoryQueryKey } from "@/components/(base)/inventario-publico/lib/hooks";
 import type { ActualizarCarInput, CrearCarInput } from "./zod";
 
 function throwIfActionFailed(
@@ -41,6 +42,7 @@ export function useCrearCar() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: carsQueryKey });
+      qc.invalidateQueries({ queryKey: publicInventoryQueryKey });
     },
   });
 }
@@ -67,6 +69,7 @@ export function useActualizarCar() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: carsQueryKey });
+      qc.invalidateQueries({ queryKey: publicInventoryQueryKey });
     },
   });
 }

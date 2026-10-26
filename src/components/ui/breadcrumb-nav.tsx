@@ -10,6 +10,7 @@ import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 const SEGMENT_LABELS: Record<string, string> = {
   TheCarsPlace: "Cars Place Lot",
   vehiculos: "Vehículos",
+  inventario: "Inventario",
   clientes: "Clientes",
   cliente: "Clientes",
   detalles: "Detalles",
