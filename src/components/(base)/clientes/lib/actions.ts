@@ -5,7 +5,8 @@ import { APP_BASE_PATH } from "@/lib/app-config";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { carRowSchema } from "@/components/(base)/vehiculos/lib/zod";
-import { mapCarRowToClienteVehiculoItem } from "./helpers";
+import { mapCarToListRow } from "@/components/(base)/vehiculos/lib/helpers";
+import { mapCustomerToListRow } from "./helpers";
 import {
   actualizarCustomerSchema,
   crearCustomerSchema,
@@ -148,6 +149,45 @@ export async function actualizarCustomerAction(raw: unknown) {
   }
 }
 
+export async function getCustomerByIdAction(rawCustomerId: unknown) {
+  const parsedId = customerIdParamSchema.safeParse(rawCustomerId);
+  if (!parsedId.success) {
+    return { ok: false as const, code: "VALIDATION" };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const { data, error } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("id", parsedId.data)
+      .maybeSingle();
+
+    if (error) {
+      console.error("getCustomerById:", error.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    if (!data) {
+      return { ok: false as const, code: "NOT_FOUND" };
+    }
+
+    const row = customerRowSchema.safeParse(data);
+    if (!row.success) {
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    return { ok: true as const, data: mapCustomerToListRow(row.data) };
+  } catch {
+    return { ok: false as const, code: "UNKNOWN" };
+  }
+}
+
 export async function listCarsByCustomerAction(rawCustomerId: unknown) {
   const parsedId = customerIdParamSchema.safeParse(rawCustomerId);
   if (!parsedId.success) {
@@ -160,6 +200,24 @@ export async function listCarsByCustomerAction(rawCustomerId: unknown) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return { ok: false as const, code: "UNAUTHORIZED" };
+
+    const { data: customerRaw, error: customerError } = await supabase
+      .from("customers")
+      .select("*")
+      .eq("id", parsedId.data)
+      .maybeSingle();
+
+    if (customerError) {
+      console.error("listCarsByCustomer customer:", customerError.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    const customerParsed = customerRaw
+      ? customerRowSchema.safeParse(customerRaw)
+      : null;
+    const customer: CustomerRow | null = customerParsed?.success
+      ? customerParsed.data
+      : null;
 
     const { data, error } = await supabase
       .from("cars")
@@ -175,7 +233,7 @@ export async function listCarsByCustomerAction(rawCustomerId: unknown) {
     const items = (data ?? [])
       .map((row) => carRowSchema.safeParse(row))
       .filter((r) => r.success)
-      .map((r) => mapCarRowToClienteVehiculoItem(r.data));
+      .map((r) => mapCarToListRow(r.data, customer));
 
     return { ok: true as const, data: items };
   } catch {

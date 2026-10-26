@@ -5,6 +5,7 @@ import { mapCustomerToListRow } from "./helpers";
 import {
   actualizarCustomerAction,
   crearCustomerAction,
+  getCustomerByIdAction,
   listCarsByCustomerAction,
   listCustomersAction,
 } from "./actions";
@@ -15,6 +16,25 @@ export const customersSearchQueryKey = ["clientes", "search"] as const;
 
 export function clienteVehiculosQueryKey(customerId: string) {
   return ["clientes", "vehiculos", customerId] as const;
+}
+
+export function customerDetailQueryKey(customerId: string) {
+  return ["clientes", "detail", customerId] as const;
+}
+
+export function useCustomer(customerId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: customerId
+      ? customerDetailQueryKey(customerId)
+      : (["clientes", "detail", "none"] as const),
+    queryFn: async () => {
+      if (!customerId) return null;
+      const res = await getCustomerByIdAction(customerId);
+      if (!res.ok) throw new Error(res.code);
+      return res.data;
+    },
+    enabled: enabled && customerId !== null,
+  });
 }
 
 export function useCustomersSearch(query: string, enabled: boolean) {
@@ -79,9 +99,10 @@ export function useActualizarCustomer() {
       if (!res.ok) throw new Error(res.code);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: customersQueryKey });
       qc.invalidateQueries({ queryKey: customersSearchQueryKey });
+      qc.invalidateQueries({ queryKey: customerDetailQueryKey(variables.id) });
     },
   });
 }

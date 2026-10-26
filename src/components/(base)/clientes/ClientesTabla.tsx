@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -41,14 +42,17 @@ import {
   clientesTablaAnchoAcciones,
   clientesTablaAnchoNo,
   clientesTablaColAnchoStyle,
+  clientesTablaDesktopTableWrapClass,
+  clientesTablaMobileCardsWrapClass,
 } from "./lib/tabla-clientes-ui";
+import { ClientesTablaMobileCards } from "./ClientesTablaMobileCards";
 import CrearClienteModal from "./forms/Crear";
-import DetalleClienteModal from "./forms/Detalles";
 import EditarClienteModal from "./forms/Editar";
 import { useCustomers } from "./lib/hooks";
+import { clienteDetallePath } from "./lib/rutas-clientes";
 import type { ClienteListRow } from "./lib/zod";
 
-const cellPad = "px-3 py-3";
+const cellPad = "px-3 py-3.5";
 const cellPadEstrecho = "px-1.5 py-3.5";
 type PageSize = SigetTablaPageSizeValue;
 
@@ -74,7 +78,7 @@ function ClienteFilaMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         side="left"
-        align="end"
+        align="center"
         sideOffset={6}
         className="z-[200] w-auto min-w-0 border-border bg-white p-1 opacity-100 dark:border-zinc-700 dark:bg-zinc-900"
       >
@@ -98,10 +102,10 @@ function ClienteFilaMenu({
 }
 
 export function ClientesTabla() {
+  const router = useRouter();
   const { data: clientes, isLoading, isError } = useCustomers();
   const [crearOpen, setCrearOpen] = useState(false);
   const [editarCliente, setEditarCliente] = useState<ClienteListRow | null>(null);
-  const [detalleCliente, setDetalleCliente] = useState<ClienteListRow | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(15);
@@ -136,13 +140,6 @@ export function ClientesTabla() {
           if (!open) setEditarCliente(null);
         }}
         cliente={editarCliente}
-      />
-      <DetalleClienteModal
-        open={detalleCliente !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetalleCliente(null);
-        }}
-        cliente={detalleCliente}
       />
       <div
         className={cn(
@@ -211,8 +208,9 @@ export function ClientesTabla() {
           ) : null}
 
           {!isLoading && !isError ? (
-            <div className="w-full min-w-0 overflow-x-auto">
-              <table className="w-full table-fixed border-collapse text-sm">
+            <>
+            <div className={clientesTablaDesktopTableWrapClass}>
+              <table className="w-full table-fixed border-collapse text-base">
                 <colgroup>
                   <col style={clientesTablaColAnchoStyle(clientesTablaAnchoNo)} />
                   <col className="w-[32%]" />
@@ -268,7 +266,7 @@ export function ClientesTabla() {
                           className={cn(
                             cellPadEstrecho,
                             clientesTablaCellDividerClass,
-                            "w-0 whitespace-nowrap text-center tabular-nums text-sm font-medium text-muted-foreground",
+                            "w-0 whitespace-nowrap text-center tabular-nums font-medium text-muted-foreground",
                           )}
                           style={clientesTablaColAnchoStyle(clientesTablaAnchoNo)}
                         >
@@ -287,7 +285,7 @@ export function ClientesTabla() {
                           className={cn(
                             cellPad,
                             clientesTablaCellDividerClass,
-                            "text-center font-mono text-sm tabular-nums",
+                            "text-center font-mono tabular-nums",
                           )}
                         >
                           {row.nit ?? "—"}
@@ -308,7 +306,7 @@ export function ClientesTabla() {
                           <div className="flex justify-end">
                             <ClienteFilaMenu
                               row={row}
-                              onDetalles={() => setDetalleCliente(row)}
+                              onDetalles={() => router.push(clienteDetallePath(row.id))}
                               onEditar={() => setEditarCliente(row)}
                             />
                           </div>
@@ -319,6 +317,29 @@ export function ClientesTabla() {
                 </tbody>
               </table>
             </div>
+
+            <div className={clientesTablaMobileCardsWrapClass}>
+              {pageItems.length === 0 ? (
+                <p className="px-4 py-14 text-center text-base font-semibold text-muted-foreground">
+                  {search.trim()
+                    ? "Sin coincidencias con la búsqueda."
+                    : "Sin clientes. Usa Añadir para registrar uno."}
+                </p>
+              ) : (
+                <ClientesTablaMobileCards
+                  items={pageItems}
+                  rowOffset={rowOffset}
+                  renderAcciones={(row) => (
+                    <ClienteFilaMenu
+                      row={row}
+                      onDetalles={() => router.push(clienteDetallePath(row.id))}
+                      onEditar={() => setEditarCliente(row)}
+                    />
+                  )}
+                />
+              )}
+            </div>
+            </>
           ) : null}
 
           {!isLoading && !isError && filtered.length > 0 ? (

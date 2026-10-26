@@ -46,7 +46,10 @@ import {
   vehiculosTablaAnchoNo,
   vehiculosTablaAnchoVin,
   vehiculosTablaColAnchoStyle,
+  vehiculosTablaDesktopTableWrapClass,
+  vehiculosTablaMobileCardsWrapClass,
 } from "./lib/tabla-vehiculos-ui";
+import { VehiculosTablaMobileCards } from "./VehiculosTablaMobileCards";
 import CrearVehiculoModal from "./forms/Crear";
 import EditarVehiculoModal from "./forms/Editar";
 import { VehiculoGaleriaViewerModal } from "./forms/VehiculoGaleriaViewerModal";
@@ -55,7 +58,7 @@ import type { VehiculoListRow } from "./lib/zod";
 
 const cellPad = "px-3 py-3.5";
 const cellPadEstrecho = "px-1.5 py-3.5";
-const cellPadFoto = "px-0 py-3.5";
+const cellPadFoto = "px-1 py-3.5";
 const marcaModeloCell = "pl-2.5 pr-4";
 type PageSize = SigetTablaPageSizeValue;
 
@@ -71,7 +74,7 @@ function VehiculoFilaMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
           aria-label={`Acciones para ${row.placa}`}
         >
           <EllipsisVertical className="size-5" aria-hidden />
@@ -79,7 +82,7 @@ function VehiculoFilaMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         side="left"
-        align="end"
+        align="center"
         sideOffset={6}
         className="z-[200] w-auto min-w-0 border-border bg-white p-1 opacity-100 dark:border-zinc-700 dark:bg-zinc-900"
       >
@@ -105,12 +108,11 @@ function FotoCell({
   return (
     <SigetActionButton
       label="Ver"
-      iconOnly
       accentColor={sigetAccent.abrir}
       morphFrom={ImageNode}
       morphTo={ImagesNode}
       onClick={onOpen}
-      className="shrink-0"
+      className="h-11 w-auto shrink-0 px-4 text-sm [&>span]:gap-0.5 [&_svg]:size-4"
       ariaLabel={`Ver fotos y factura de ${row.placa}`}
     />
   );
@@ -230,7 +232,8 @@ export function VehiculosTabla() {
         ) : null}
 
         {!isLoading && !isError ? (
-          <div className="w-full min-w-0 overflow-x-auto overflow-y-visible">
+          <>
+          <div className={vehiculosTablaDesktopTableWrapClass}>
           <table className="w-full table-auto border-collapse text-base">
             <colgroup>
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
@@ -425,6 +428,26 @@ export function VehiculosTabla() {
             </tbody>
           </table>
           </div>
+
+          <div className={vehiculosTablaMobileCardsWrapClass}>
+            {pageItems.length === 0 ? (
+              <p className="px-4 py-14 text-center text-base font-semibold text-muted-foreground">
+                {search.trim()
+                  ? "Sin coincidencias con la búsqueda."
+                  : "Sin vehículos. Usa Añadir para registrar uno."}
+              </p>
+            ) : (
+              <VehiculosTablaMobileCards
+                items={pageItems}
+                rowOffset={rowOffset}
+                onVerGaleria={setGaleriaRow}
+                renderAcciones={(row) => (
+                  <VehiculoFilaMenu row={row} onEditar={() => setEditarCarId(row.id)} />
+                )}
+              />
+            )}
+          </div>
+          </>
         ) : null}
 
         {!isLoading && !isError && filtered.length > 0 ? (

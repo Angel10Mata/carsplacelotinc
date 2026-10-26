@@ -26,6 +26,11 @@ export const clientesTablaAnchoAcciones: ClientesTablaColAncho = {
   maxWidth: "3rem",
 };
 
+export const clientesTablaDesktopTableWrapClass =
+  "hidden w-full min-w-0 overflow-x-auto lg:block";
+
+export const clientesTablaMobileCardsWrapClass = "flex w-full flex-col lg:hidden";
+
 export const clientesTablaAccentBarClass = "h-1 w-full shrink-0 bg-brand";
 
 export const clientesTablaCardShellClass =
@@ -47,10 +52,10 @@ export const clientesTablaToolbarButtonsMobileGridClass =
   "max-lg:!grid max-lg:!w-full max-lg:grid-cols-2 max-lg:gap-2 max-lg:[&>*]:min-w-0 max-lg:[&>*]:w-full";
 
 export const clientesTablaSearchInputClass =
-  "h-11 w-full rounded-xl border border-border/60 bg-background/80 pl-10 pr-3 text-sm text-foreground outline-none shadow-sm backdrop-blur-sm transition-colors placeholder:text-muted-foreground focus:border-brand/50 focus:ring-2 focus:ring-brand/20 dark:border-zinc-700 dark:bg-zinc-900/50 dark:focus:border-brand-bright/50 dark:focus:ring-brand-bright/20";
+  "h-11 w-full rounded-xl border border-border/60 bg-background/80 pl-10 pr-3 text-base text-foreground outline-none shadow-sm backdrop-blur-sm transition-colors placeholder:text-muted-foreground focus:border-brand/50 focus:ring-2 focus:ring-brand/20 dark:border-zinc-700 dark:bg-zinc-900/50 dark:focus:border-brand-bright/50 dark:focus:ring-brand-bright/20";
 
 export const clientesTablaAddOutlineButtonClass =
-  "inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-brand bg-transparent px-4 text-xs font-bold text-brand shadow-none transition-colors hover:bg-brand/10 dark:border-brand-bright dark:text-brand-bright dark:hover:bg-brand-bright/10 max-lg:w-full max-lg:text-sm";
+  "inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-brand bg-transparent px-4 text-sm font-bold text-brand shadow-none transition-colors hover:bg-brand/10 dark:border-brand-bright dark:text-brand-bright dark:hover:bg-brand-bright/10 max-lg:w-full max-lg:text-base";
 
 export const clientesTablaHeadRowClass =
   "border-b border-border bg-zinc-100 text-xs font-bold uppercase tracking-widest text-brand dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-brand-bright";

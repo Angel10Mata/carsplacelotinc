@@ -11,6 +11,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   TheCarsPlace: "Cars Place Lot",
   vehiculos: "Vehículos",
   clientes: "Clientes",
+  cliente: "Clientes",
+  detalles: "Detalles",
   reporteria: "Reportería",
   admin: "Administración",
   usuarios: "Gestión de Usuarios",
@@ -19,6 +21,10 @@ const SEGMENT_LABELS: Record<string, string> = {
   nuevo: "Nuevo",
   editar: "Editar",
   ver: "Ver",
+};
+
+const SEGMENT_HREF: Partial<Record<string, string>> = {
+  cliente: `${APP_BASE_PATH}/clientes`,
 };
 
 export function BreadcrumbNav() {
@@ -41,7 +47,7 @@ export function BreadcrumbNav() {
         parts.push(rawSegments[nextIdx]);
         nextIdx++;
       }
-      const href = "/" + parts.join("/");
+      const href = SEGMENT_HREF[segment] ?? "/" + parts.join("/");
 
       return { segment, label, href };
     })

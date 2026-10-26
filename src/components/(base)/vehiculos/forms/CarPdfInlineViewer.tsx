@@ -48,12 +48,12 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
     const update = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      if (w <= 0) return;
+      if (w <= 0 || h <= 0) return;
       let fit = w;
-      if (pageAspect !== null && h > 0) {
+      if (pageAspect !== null) {
         fit = Math.min(w, h * pageAspect);
       }
-      setBaseWidth(Math.max(280, Math.round(fit)));
+      setBaseWidth(Math.max(200, Math.round(fit)));
     };
 
     update();
@@ -126,10 +126,10 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
 
       <div
         ref={containerRef}
-        className="flex min-h-0 w-full flex-1 flex-col overflow-auto overscroll-contain p-0"
+        className="flex h-full min-h-0 w-full flex-1 flex-col overflow-auto overscroll-contain p-0"
       >
         <Document
-          className="flex w-full min-w-0 flex-col"
+          className="flex w-full min-w-0 flex-1 flex-col"
           file={url}
           loading={
             <div className="flex min-h-[12rem] items-center justify-center">
@@ -158,7 +158,7 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
                 }
               }}
               className={cn(
-                "mb-2 w-full max-w-full overflow-hidden rounded-none bg-white last:mb-0 [&_canvas]:!h-auto [&_canvas]:!max-w-full [&_canvas]:!w-full",
+                "mb-2 w-full max-w-none overflow-hidden rounded-none bg-white last:mb-0 [&_canvas]:!block [&_canvas]:!h-auto [&_canvas]:!w-full [&_canvas]:!max-w-full",
                 index === 0 && "mb-0",
               )}
             />

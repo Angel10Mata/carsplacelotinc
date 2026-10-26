@@ -17,6 +17,13 @@ export function getModuleBackHref(pathname: string): string | null {
   let backHref = APP_BASE_PATH;
   const moduleName = rawSegments.length > 1 ? rawSegments[1] : "";
 
+  if (
+    rawSegments[1] === "cliente" &&
+    rawSegments.includes("detalles")
+  ) {
+    return `${APP_BASE_PATH}/clientes`;
+  }
+
   if (rawSegments.includes("editar")) {
     const detalleIdx = rawSegments.indexOf("ver");
     const id =

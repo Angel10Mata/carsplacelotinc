@@ -38,8 +38,8 @@ export const vehiculosTablaAnchoVin: VehiculosTablaColAncho = {
 };
 
 export const vehiculosTablaAnchoFoto: VehiculosTablaColAncho = {
-  width: "3rem",
-  maxWidth: "3rem",
+  width: "5rem",
+  maxWidth: "5rem",
 };
 
 export const vehiculosTablaAnchoMarcaModelo: VehiculosTablaColAncho = {
@@ -52,6 +52,11 @@ export const vehiculosTablaAnchoAcciones: VehiculosTablaColAncho = {
   width: "3rem",
   maxWidth: "3rem",
 };
+
+export const vehiculosTablaDesktopTableWrapClass =
+  "hidden w-full min-w-0 overflow-x-auto overflow-y-visible lg:block";
+
+export const vehiculosTablaMobileCardsWrapClass = "flex w-full flex-col lg:hidden";
 
 export const vehiculosTablaAccentBarClass = "h-1 w-full shrink-0 bg-brand";
 
