@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X as XIcon,
+  Loader2,
 } from "lucide-react";
 import { obtenerDiasDelMes } from "@/components/ui/CustomDatePicker";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
@@ -75,6 +76,29 @@ export function ModalForm({
     <form {...props} className={cn("space-y-4", className)}>
       {children}
     </form>
+  );
+}
+
+export function ModalLoadingBody({
+  className,
+  minHeightClass = "min-h-[20rem]",
+}: {
+  className?: string;
+  minHeightClass?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-1 items-center justify-center",
+        minHeightClass,
+        className,
+      )}
+      role="status"
+      aria-live="polite"
+      aria-label="Cargando"
+    >
+      <Loader2 className="size-9 animate-spin text-brand dark:text-brand-bright" />
+    </div>
   );
 }
 

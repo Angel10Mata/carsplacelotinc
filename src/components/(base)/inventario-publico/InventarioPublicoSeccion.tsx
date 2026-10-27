@@ -2,14 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { CarFront, ChevronLeft, ChevronRight, Filter, Loader2, Search } from "lucide-react";
+import { CarFront, ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
+import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import { AuroraText } from "@/components/ui/aurora-text";
 import { TCPL_AURORA_COLORS, TCPL_AURORA_MUTED } from "@/lib/brand-colors";
+import { ModuleHeaderBackButton } from "@/components/(base)/layout/ModuleHeaderBackButton";
+import { VEHICULOS_MODULE_PATH } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 import type { PublicInventoryItem } from "./lib/zod";
 
 type InventarioPublicoSeccionProps = {
   embedded?: boolean;
+  backFromVehiculos?: boolean;
   items: PublicInventoryItem[];
   isLoading: boolean;
   isError: boolean;
@@ -18,11 +22,13 @@ type InventarioPublicoSeccionProps = {
 
 export function InventarioPublicoSeccion({
   embedded = false,
+  backFromVehiculos = false,
   items,
   isLoading,
   isError,
   onSelect,
 }: InventarioPublicoSeccionProps) {
+  const embeddedFromVehiculos = embedded && backFromVehiculos;
   const [searchTerm, setSearchTerm] = useState("");
   const [showGrid, setShowGrid] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,11 +78,44 @@ export function InventarioPublicoSeccion({
     >
       <div
         className={cn(
-          "flex shrink-0 flex-col items-center justify-center px-6 text-center transition-all duration-1000 ease-out lg:px-12",
-          showGrid ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+          "mx-auto flex w-full max-w-7xl flex-col px-6 lg:px-12",
+          embeddedFromVehiculos ? "gap-3 pb-1" : "gap-0",
         )}
       >
-        <h1 className="max-w-4xl text-3xl font-black uppercase leading-none tracking-tighter text-foreground sm:text-5xl lg:text-6xl">
+        {embeddedFromVehiculos ? (
+          <div className="relative z-10 flex w-full items-center gap-3">
+            <ModuleHeaderBackButton
+              className="mt-0 shrink-0"
+              size="sm"
+              href={VEHICULOS_MODULE_PATH}
+              ariaLabel="Volver a gestión de vehículos"
+            />
+            <div className="min-w-0 text-left">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Gestión de vehículos
+              </p>
+              <p className="text-sm font-semibold leading-tight text-foreground">
+                Vista pública del inventario
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          className={cn(
+            "flex shrink-0 flex-col items-center justify-center text-center transition-all duration-1000 ease-out",
+            embeddedFromVehiculos ? "-mt-10 pt-0 sm:-mt-11" : "px-0",
+            showGrid ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+          )}
+        >
+        <h1
+          className={cn(
+            "max-w-4xl font-black uppercase leading-none tracking-tighter text-foreground",
+            embeddedFromVehiculos
+              ? "text-2xl sm:text-4xl lg:text-5xl"
+              : "text-3xl sm:text-5xl lg:text-6xl",
+          )}
+        >
           <AuroraText colors={[...TCPL_AURORA_COLORS]}>Premium Selection</AuroraText>
           <br />
           <AuroraText className="text-muted-foreground/50" colors={[...TCPL_AURORA_MUTED]}>
@@ -84,12 +123,22 @@ export function InventarioPublicoSeccion({
           </AuroraText>
         </h1>
 
-        <p className="mt-6 mb-10 max-w-lg text-sm font-medium text-muted-foreground/80 sm:text-base">
+        <p
+          className={cn(
+            "max-w-lg text-sm font-medium text-muted-foreground/80 sm:text-base",
+            embeddedFromVehiculos ? "mt-3 mb-5" : "mt-6 mb-10",
+          )}
+        >
           Explore our curated inventory of vehicles. Each unit is documented and verified for
           transparency.
         </p>
 
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-primary">
+        <div
+          className={cn(
+            "inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-primary",
+            embeddedFromVehiculos ? "mb-4" : "mb-6",
+          )}
+        >
           <CarFront className="size-4" aria-hidden />
           Inventory 2026
         </div>
@@ -113,14 +162,17 @@ export function InventarioPublicoSeccion({
             <Filter className="size-3.5" aria-hidden />
           </button>
         </div>
+        </div>
       </div>
 
-      <div className="mt-10 flex flex-1 flex-col px-6 pb-20 lg:px-12">
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-20 lg:px-12",
+          embeddedFromVehiculos ? "mt-6" : "mt-10",
+        )}
+      >
         {isLoading ? (
-          <p className="flex items-center justify-center gap-2 py-20 text-muted-foreground">
-            <Loader2 className="size-6 animate-spin" aria-hidden />
-            Loading inventory…
-          </p>
+          <ModuleDataLoadingPanel className="mx-auto max-w-7xl" minHeightClass="min-h-[16rem]" />
         ) : null}
 
         {isError ? (
@@ -175,7 +227,7 @@ export function InventarioPublicoSeccion({
                   </div>
                   <div className="flex flex-col p-5 pt-2">
                     <div className="flex w-full items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase text-foreground">
+                      <span className="text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
                         {item.invoiceDateLabel}
                       </span>
                       <span
@@ -193,8 +245,8 @@ export function InventarioPublicoSeccion({
                     </h3>
 
                     {item.vin ? (
-                      <p className="mt-1 truncate text-[10px] font-medium uppercase text-red-500">
-                        VIN:{item.vin}
+                      <p className="mt-1 truncate text-xs font-semibold uppercase tracking-wide text-red-500 sm:text-sm">
+                        VIN: {item.vin}
                       </p>
                     ) : null}
 

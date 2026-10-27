@@ -14,7 +14,7 @@ import { AuroraText } from "@/components/ui/aurora-text";
 import { PushNotificationToggle } from "@/components/ui/PushNotificationToggle";
 import { useUserContext } from "@/components/(base)/providers/UserProvider";
 import { ADMIN_MENU_ITEMS, APP_MODULES } from "@/lib/app-modules";
-import { APP_BASE_PATH, APP_NAME } from "@/lib/app-config";
+import { APP_BASE_PATH, APP_NAME, PUBLIC_CATALOG_PATH } from "@/lib/app-config";
 import {
   adminIconColors,
   adminMorphIcons,
@@ -149,7 +149,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
     if (result.isConfirmed) {
       const supabase = createClient();
       await supabase.auth.signOut();
-      window.location.replace("/login");
+      window.location.replace(PUBLIC_CATALOG_PATH);
     }
   };
 
@@ -243,7 +243,52 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
               </div>
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="shrink-0 border-b border-border/40 bg-zinc-100 dark:bg-zinc-800">
+            <div className="px-5 py-5">
+              <div className={cn(menuWhiteCard, "p-4")}>
+                <div className="flex items-start gap-3">
+                  <MorphIconBox
+                    from={navMorphIcons.logIn.from}
+                    to={navMorphIcons.logIn.to}
+                    size={MENU_ICON_MAIN.size}
+                    color={navIconColors.brandBright}
+                    strokeWidth={MENU_ICON_MAIN.strokeWidth}
+                    spring="snappy"
+                    padding={MENU_ICON_MAIN.padding}
+                    boxClassName={cn("shrink-0", navIconBoxClass.menuTile)}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black uppercase tracking-wide text-brand dark:text-brand-bright">
+                      Acceso al sistema
+                    </p>
+                    <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                      Inicia sesión para administrar vehículos, clientes y el
+                      panel de {APP_NAME}.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-brand-bright active:scale-[0.99]"
+                >
+                  Iniciar sesión
+                  <MorphIconBox
+                    from={navMorphIcons.logIn.from}
+                    to={navMorphIcons.logIn.to}
+                    size={16}
+                    color="#ffffff"
+                    strokeWidth={2.25}
+                    spring="snappy"
+                    padding="xs"
+                    boxClassName="border-0 bg-transparent"
+                  />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col flex-1 px-4 py-6 pb-8 gap-6">
           {user ? (
@@ -675,27 +720,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                 </div>
               )}
             </>
-          ) : (
-            <div className="mt-2">
-              <Link
-                href="/login"
-                onClick={closeMenu}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-brand text-white px-5 py-3.5 text-sm font-bold w-full hover:bg-brand-bright transition-colors"
-              >
-                <span>Iniciar Sesión</span>
-                <MorphIconBox
-                  from={navMorphIcons.logIn.from}
-                  to={navMorphIcons.logIn.to}
-                  size={16}
-                  color="#ffffff"
-                  strokeWidth={2}
-                  spring="snappy"
-                  padding="xs"
-                  boxClassName="border-0 bg-transparent"
-                />
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-auto border-t border-border/60 px-5 py-4">

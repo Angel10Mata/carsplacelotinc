@@ -27,8 +27,10 @@ export const vehiculosTablaAnchoFactura: VehiculosTablaColAncho = {
   maxWidth: "148px",
 };
 
-export const vehiculosTablaAnchoCliente: VehiculosTablaColAncho = {
-  width: "1%",
+export const vehiculosTablaAnchoFotos: VehiculosTablaColAncho = {
+  width: "5.75rem",
+  minWidth: "5.75rem",
+  maxWidth: "5.75rem",
 };
 
 export const vehiculosTablaAnchoVin: VehiculosTablaColAncho = {
@@ -37,20 +39,10 @@ export const vehiculosTablaAnchoVin: VehiculosTablaColAncho = {
   maxWidth: "11rem",
 };
 
-export const vehiculosTablaAnchoFoto: VehiculosTablaColAncho = {
-  width: "5rem",
-  maxWidth: "5rem",
-};
-
 export const vehiculosTablaAnchoMarcaModelo: VehiculosTablaColAncho = {
   width: "15.5rem",
   minWidth: "11rem",
   maxWidth: "16.5rem",
-};
-
-export const vehiculosTablaAnchoAcciones: VehiculosTablaColAncho = {
-  width: "3rem",
-  maxWidth: "3rem",
 };
 
 export const vehiculosTablaDesktopTableWrapClass =

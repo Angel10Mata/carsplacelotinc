@@ -1,10 +1,11 @@
 import { Suspense } from "react";
+import { ModuleRouteSuspenseFallback } from "@/components/ui/module-page-loading";
 import { VerAdmin } from "@/components/(base)/admin/VerAdmin";
 
-// AdministraciÃ³n
+// Administración
 export default function AdminPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ModuleRouteSuspenseFallback />}>
       <VerAdmin />
     </Suspense>
   );

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { PUBLIC_CATALOG_PATH } from "@/lib/app-config";
 
 import { revalidatePath } from "next/cache";
 
@@ -10,5 +11,5 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/login");
+  redirect(PUBLIC_CATALOG_PATH);
 }

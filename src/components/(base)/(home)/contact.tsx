@@ -99,20 +99,20 @@ export function ContactSection() {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.4 }}
-        className="text-center mt-auto space-y-1"
+        className="text-center mt-auto space-y-2"
       >
-        <p className="text-xs font-bold uppercase tracking-widest opacity-40">
-          © 2026 Kore
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+          © {new Date().getFullYear()} THE CARS PLACE LOT INC.
         </p>
-        <p className="text-xs font-bold uppercase tracking-widest">
-          Desarrollado por{" "}
+        <p className="text-sm font-black uppercase tracking-wide text-foreground">
+          POWERED BY{" "}
           <a
             href="https://www.oscar27jimenez.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:underline cursor-pointer transition-all inline-block"
+            className="inline-block cursor-pointer transition-opacity hover:opacity-90"
           >
-            <AuroraText>Kore | Gestión Inteligente</AuroraText>
+            <AuroraText>ING. OSCAR JIMÉNEZ</AuroraText>
           </a>
         </p>
       </motion.div>

@@ -15,6 +15,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  sigetTablaAccionesMenuBotonClass,
+  sigetTablaAnchoAccionesColStyle,
+  sigetTablaCeldaAccionesClass,
+  sigetTablaCeldaBotonCentrarClass,
+  sigetTablaCeldaBotonHeaderClass,
+  sigetTablaCeldaFotosVerClass,
+  sigetTablaFotosVerBotonClass,
+} from "@/components/ui/siget-tabla-acciones-ui";
 import type { VehiculoListRow } from "@/components/(base)/vehiculos/lib/zod";
 import {
   vehiculosTablaAccentBarClass,
@@ -26,9 +35,8 @@ import {
   vehiculosTablaHeadRowClass,
   vehiculosTablaPaginationBarClass,
   vehiculosTablaPaginationControlClass,
-  vehiculosTablaAnchoAcciones,
   vehiculosTablaAnchoFactura,
-  vehiculosTablaAnchoFoto,
+  vehiculosTablaAnchoFotos,
   vehiculosTablaAnchoMarcaModelo,
   vehiculosTablaAnchoNo,
   vehiculosTablaAnchoVin,
@@ -39,8 +47,7 @@ import { VehiculosTablaMobileCards } from "@/components/(base)/vehiculos/Vehicul
 
 const cellPad = "px-3 py-3.5";
 const cellPadEstrecho = "px-1.5 py-3.5";
-const cellPadFoto = "px-1 py-3.5";
-const marcaModeloCell = "pl-2.5 pr-4";
+const marcaModeloCell = "pl-2.5 pr-1";
 
 type PageSize = SigetTablaPageSizeValue;
 
@@ -64,7 +71,7 @@ function VehiculoFilaMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className={sigetTablaAccionesMenuBotonClass}
           aria-label={`Acciones para ${row.placa}`}
         >
           <EllipsisVertical className="size-5" aria-hidden />
@@ -96,7 +103,7 @@ function FotoCell({ row, onOpen }: { row: VehiculoListRow; onOpen: () => void })
       morphFrom={ImageNode}
       morphTo={ImagesNode}
       onClick={onOpen}
-      className="h-11 w-auto shrink-0 px-4 text-sm [&>span]:gap-0.5 [&_svg]:size-4"
+      className={sigetTablaFotosVerBotonClass}
       ariaLabel={`Ver fotos y factura de ${row.placa}`}
     />
   );
@@ -141,14 +148,14 @@ export function ClienteDetalleVehiculosTabla({
         {!isLoading && !isError ? (
           <>
           <div className={vehiculosTablaDesktopTableWrapClass}>
-            <table className="w-full table-auto border-collapse text-base">
+            <table className="w-full table-fixed border-collapse text-base">
               <colgroup>
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)} />
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
-                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)} />
-                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)} />
-                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)} />
+                <col />
+                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)} />
+                <col style={sigetTablaAnchoAccionesColStyle} />
               </colgroup>
               <thead>
                 <tr className={vehiculosTablaHeadRowClass}>
@@ -190,20 +197,16 @@ export function ClienteDetalleVehiculosTabla({
                   </th>
                   <th
                     className={cn(
-                      cellPadFoto,
+                      sigetTablaCeldaBotonHeaderClass,
                       vehiculosTablaCellDividerClass,
-                      "whitespace-nowrap text-center",
                     )}
-                    style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                    style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)}
                   >
                     Fotos
                   </th>
                   <th
-                    className={cn(
-                      cellPadEstrecho,
-                      "whitespace-nowrap text-center",
-                    )}
-                    style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
+                    className={sigetTablaCeldaBotonHeaderClass}
+                    style={sigetTablaAnchoAccionesColStyle}
                   >
                     ACC
                   </th>
@@ -275,24 +278,20 @@ export function ClienteDetalleVehiculosTabla({
                       </td>
                       <td
                         className={cn(
-                          cellPadFoto,
+                          sigetTablaCeldaFotosVerClass,
                           vehiculosTablaCellDividerClass,
-                          "whitespace-nowrap align-middle text-center",
                         )}
-                        style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                        style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)}
                       >
-                        <div className="flex justify-center">
+                        <div className={sigetTablaCeldaBotonCentrarClass}>
                           <FotoCell row={row} onOpen={() => onVerGaleria(row)} />
                         </div>
                       </td>
                       <td
-                        className={cn(
-                          cellPadEstrecho,
-                          "whitespace-nowrap align-middle text-center",
-                        )}
-                        style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
+                        className={sigetTablaCeldaAccionesClass}
+                        style={sigetTablaAnchoAccionesColStyle}
                       >
-                        <div className="flex justify-center">
+                        <div className={sigetTablaCeldaBotonCentrarClass}>
                           <VehiculoFilaMenu row={row} onEditar={() => onEditar(row)} />
                         </div>
                       </td>

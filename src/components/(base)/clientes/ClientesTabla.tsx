@@ -12,7 +12,14 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import { cn } from "@/lib/utils";
+import {
+  sigetTablaAccionesMenuBotonClass,
+  sigetTablaCeldaAccionesClass,
+  sigetTablaCeldaBotonCentrarClass,
+  sigetTablaCeldaBotonHeaderClass,
+} from "@/components/ui/siget-tabla-acciones-ui";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +46,9 @@ import {
   clientesTablaToolbarFiltersClass,
   clientesTablaToolbarGridClass,
   clientesTablaToolbarSectionClass,
-  clientesTablaAnchoAcciones,
+  clientesTablaAnchoAcc,
+  clientesTablaAnchoNit,
+  clientesTablaAnchoNombre,
   clientesTablaAnchoNo,
   clientesTablaColAnchoStyle,
   clientesTablaDesktopTableWrapClass,
@@ -70,7 +79,7 @@ function ClienteFilaMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className={sigetTablaAccionesMenuBotonClass}
           aria-label={`Acciones para ${row.nombre}`}
         >
           <EllipsisVertical className="size-5" aria-hidden />
@@ -193,12 +202,7 @@ export function ClientesTabla() {
             </div>
           </div>
 
-          {isLoading ? (
-            <p className="flex items-center justify-center gap-2 px-4 py-14 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Cargando clientes…
-            </p>
-          ) : null}
+          {isLoading ? <ModuleDataLoadingPanel className="mx-4" /> : null}
 
           {isError ? (
             <p className="px-4 py-14 text-center text-sm font-semibold text-muted-foreground">
@@ -213,10 +217,12 @@ export function ClientesTabla() {
               <table className="w-full table-fixed border-collapse text-base">
                 <colgroup>
                   <col style={clientesTablaColAnchoStyle(clientesTablaAnchoNo)} />
-                  <col className="w-[32%]" />
-                  <col className="w-[11%]" />
+                  <col
+                    style={clientesTablaColAnchoStyle(clientesTablaAnchoNombre)}
+                  />
+                  <col style={clientesTablaColAnchoStyle(clientesTablaAnchoNit)} />
                   <col />
-                  <col style={clientesTablaColAnchoStyle(clientesTablaAnchoAcciones)} />
+                  <col style={clientesTablaColAnchoStyle(clientesTablaAnchoAcc)} />
                 </colgroup>
                 <thead>
                   <tr className={clientesTablaHeadRowClass}>
@@ -230,18 +236,34 @@ export function ClientesTabla() {
                     >
                       No.
                     </th>
-                    <th className={cn(cellPad, clientesTablaCellDividerClass, "text-center")}>
+                    <th
+                      className={cn(
+                        cellPad,
+                        clientesTablaCellDividerClass,
+                        "min-w-0 text-center",
+                      )}
+                      style={clientesTablaColAnchoStyle(clientesTablaAnchoNombre)}
+                    >
                       Nombre
                     </th>
-                    <th className={cn(cellPad, clientesTablaCellDividerClass, "text-center")}>
+                    <th
+                      className={cn(cellPad, clientesTablaCellDividerClass, "text-center")}
+                      style={clientesTablaColAnchoStyle(clientesTablaAnchoNit)}
+                    >
                       NIT
                     </th>
-                    <th className={cn(cellPad, clientesTablaCellDividerClass, "text-center")}>
+                    <th
+                      className={cn(
+                        cellPad,
+                        clientesTablaCellDividerClass,
+                        "min-w-0 text-center",
+                      )}
+                    >
                       Dirección
                     </th>
                     <th
-                      className={cn(cellPadEstrecho, "whitespace-nowrap text-center")}
-                      style={clientesTablaColAnchoStyle(clientesTablaAnchoAcciones)}
+                      className={sigetTablaCeldaBotonHeaderClass}
+                      style={clientesTablaColAnchoStyle(clientesTablaAnchoAcc)}
                     >
                       ACC
                     </th>
@@ -276,8 +298,9 @@ export function ClientesTabla() {
                           className={cn(
                             cellPad,
                             clientesTablaCellDividerClass,
-                            "font-semibold text-foreground",
+                            "min-w-0 font-semibold text-foreground",
                           )}
+                          style={clientesTablaColAnchoStyle(clientesTablaAnchoNombre)}
                         >
                           {row.nombre}
                         </td>
@@ -287,6 +310,7 @@ export function ClientesTabla() {
                             clientesTablaCellDividerClass,
                             "text-center font-mono tabular-nums",
                           )}
+                          style={clientesTablaColAnchoStyle(clientesTablaAnchoNit)}
                         >
                           {row.nit ?? "—"}
                         </td>
@@ -294,16 +318,16 @@ export function ClientesTabla() {
                           className={cn(
                             cellPad,
                             clientesTablaCellDividerClass,
-                            "text-muted-foreground",
+                            "min-w-0 text-muted-foreground",
                           )}
                         >
                           {row.direccion ?? "—"}
                         </td>
                         <td
-                          className={cn(cellPadEstrecho, "whitespace-nowrap align-middle pr-1")}
-                          style={clientesTablaColAnchoStyle(clientesTablaAnchoAcciones)}
+                          className={sigetTablaCeldaAccionesClass}
+                          style={clientesTablaColAnchoStyle(clientesTablaAnchoAcc)}
                         >
-                          <div className="flex justify-end">
+                          <div className={sigetTablaCeldaBotonCentrarClass}>
                             <ClienteFilaMenu
                               row={row}
                               onDetalles={() => router.push(clienteDetallePath(row.id))}

@@ -1,10 +1,11 @@
 import { Suspense } from "react";
+import { ModuleRouteSuspenseFallback } from "@/components/ui/module-page-loading";
 import VerConfiguraciones from "@/components/(base)/(settings)/VerConfiguraciones";
 
-// ConfiguraciÃ³n de la farmacia
+// Configuración de la farmacia
 export default function ConfiguracionesPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ModuleRouteSuspenseFallback />}>
       <VerConfiguraciones />
     </Suspense>
   );

@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, FileText, Images, Loader2 } from "lucide-react";
+import { Copy, FileText, Images } from "lucide-react";
 import { Download as DownloadNode } from "lucide";
-import { ModalShell, toast } from "@/components/ui/general-modal";
+import { ModalLoadingBody, ModalShell, toast } from "@/components/ui/general-modal";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { cn } from "@/lib/utils";
 import {
@@ -23,11 +23,7 @@ const invoicePdfViewerLoader = () =>
 
 const CarPdfInlineViewer = dynamic(invoicePdfViewerLoader, {
   ssr: false,
-  loading: () => (
-    <div className="flex min-h-[14rem] flex-1 items-center justify-center">
-      <Loader2 className="size-8 animate-spin text-brand dark:text-brand-bright" />
-    </div>
-  ),
+  loading: () => <ModalLoadingBody minHeightClass="min-h-[14rem]" />,
 });
 
 const galeriaMediaPanelInvoiceClass =
@@ -43,11 +39,7 @@ const galeriaPhotosThumbRailClass =
   "flex h-24 w-full shrink-0 flex-row gap-2 overflow-x-auto border-t border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950 md:h-full md:w-24 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-l md:border-t-0";
 
 function InvoicePdfLoading() {
-  return (
-    <div className="flex h-full min-h-0 flex-1 items-center justify-center">
-      <Loader2 className="size-8 animate-spin text-brand dark:text-brand-bright" />
-    </div>
-  );
+  return <ModalLoadingBody minHeightClass="min-h-[14rem]" className="h-full min-h-0" />;
 }
 
 

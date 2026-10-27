@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ChevronLeft, type IconNode } from "lucide";
-import { Loader2 } from "lucide-react";
 import { normalizarFechaCalendario } from "@/lib/fechas-gt";
 import {
   ModalShell,
+  ModalLoadingBody,
   ModalForm,
   ModalField,
   ModalLabel,
@@ -254,9 +254,7 @@ export default function EditarVehiculoModal({
       contentClassName={vehiculosWizardModalContentClass}
     >
       {isLoading || !ready ? (
-        <div className="flex min-h-[42rem] flex-1 items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-brand" />
-        </div>
+        <ModalLoadingBody minHeightClass="min-h-[42rem]" />
       ) : (
         <ModalForm
           className={vehiculosWizardFormClass}

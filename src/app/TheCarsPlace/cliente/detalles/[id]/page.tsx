@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ModuleRouteSuspenseFallback } from "@/components/ui/module-page-loading";
 import { VerDetalleCliente } from "@/components/(base)/clientes/VerDetalleCliente";
 
 type ClienteDetallePageProps = {
@@ -9,7 +10,7 @@ export default async function ClienteDetallePage({ params }: ClienteDetallePageP
   const { id } = await params;
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ModuleRouteSuspenseFallback />}>
       <VerDetalleCliente customerId={id} />
     </Suspense>
   );

@@ -1,4 +1,6 @@
 import { TIMEZONE_GT } from "@/lib/fechas-gt";
+import { mapCarToListRow } from "@/components/(base)/vehiculos/lib/helpers";
+import type { CustomerRow } from "@/components/(base)/clientes/lib/zod";
 import type { CarRow } from "@/components/(base)/vehiculos/lib/zod";
 import {
   carImagePathToPublicUrl,
@@ -40,7 +42,10 @@ export function formatPublicInvoiceDateLabel(iso: string): string {
     .toUpperCase();
 }
 
-export function mapCarRowToPublicInventoryItem(row: CarRow): PublicInventoryItem {
+export function mapCarRowToPublicInventoryItem(
+  row: CarRow,
+  customer?: CustomerRow | null,
+): PublicInventoryItem {
   const imageUrls = row.car_images
     .filter((path) => !isCarPdfStoragePath(path))
     .map((path) => carImagePathToPublicUrl(path));
@@ -57,5 +62,6 @@ export function mapCarRowToPublicInventoryItem(row: CarRow): PublicInventoryItem
     invoiceDateLabel: formatPublicInvoiceDateLabel(row.invoice_date),
     coverImageUrl,
     imageUrls,
+    invoiceRow: mapCarToListRow(row, customer ?? null),
   };
 }

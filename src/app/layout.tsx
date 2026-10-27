@@ -7,6 +7,7 @@ import EncabezadoApp from "@/components/(base)/layout/EncabezadoApp";
 import { createClient } from "@/utils/supabase/server";
 import Providers from "@/components/(base)/providers/QueryProviders";
 import { UserProvider } from "@/components/(base)/providers/UserProvider";
+import { InventarioUiProvider } from "@/components/(base)/inventario-publico/lib/inventario-ui-context";
 import OfflineBanner from "@/components/OfflineBanner";
 import ObsToastContainer from "@/components/(base)/layout/ObsToastContainer";
 import { APP_LOGO_PATH, APP_NAME } from "@/lib/app-config";
@@ -87,12 +88,14 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <UserProvider user={user} initialProfileRole={initialProfileRole}>
-              <OfflineBanner />
-              <EncabezadoApp />
-              <main className="flex-1 w-full flex flex-col">
-                {children}
-              </main>
-              <ObsToastContainer />
+              <InventarioUiProvider>
+                <OfflineBanner />
+                <EncabezadoApp />
+                <main className="flex-1 w-full flex flex-col">
+                  {children}
+                </main>
+                <ObsToastContainer />
+              </InventarioUiProvider>
             </UserProvider>
           </ThemeProvider>
         </Providers>

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { sigetTablaAnchoAccionesRem } from "@/components/ui/siget-tabla-acciones-ui";
 
 export type ClientesTablaColAncho = {
   width: string;
@@ -21,13 +22,24 @@ export const clientesTablaAnchoNo: ClientesTablaColAncho = {
   maxWidth: "3rem",
 };
 
-export const clientesTablaAnchoAcciones: ClientesTablaColAncho = {
-  width: "3rem",
-  maxWidth: "3rem",
+export const clientesTablaAnchoNombre: ClientesTablaColAncho = {
+  width: "32%",
+};
+
+export const clientesTablaAnchoNit: ClientesTablaColAncho = {
+  width: "7.5rem",
+  minWidth: "7.5rem",
+  maxWidth: "7.5rem",
+};
+
+export const clientesTablaAnchoAcc: ClientesTablaColAncho = {
+  width: sigetTablaAnchoAccionesRem,
+  minWidth: sigetTablaAnchoAccionesRem,
+  maxWidth: sigetTablaAnchoAccionesRem,
 };
 
 export const clientesTablaDesktopTableWrapClass =
-  "hidden w-full min-w-0 overflow-x-auto lg:block";
+  "hidden w-full min-w-0 overflow-x-auto overflow-y-visible lg:block";
 
 export const clientesTablaMobileCardsWrapClass = "flex w-full flex-col lg:hidden";
 

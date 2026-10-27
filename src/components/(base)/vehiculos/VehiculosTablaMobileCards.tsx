@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Image as ImageNode, Images as ImagesNode } from "lucide";
 import { Hash, User } from "lucide-react";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
+import { sigetTablaFotosVerBotonClass } from "@/components/ui/siget-tabla-acciones-ui";
 import {
   SigetMobileRecordFooter,
   SigetMobileRecordHeader,
@@ -79,7 +80,7 @@ export function VehiculosTablaMobileCards({
                   morphFrom={ImageNode}
                   morphTo={ImagesNode}
                   onClick={() => onVerGaleria(row)}
-                  className="h-11 w-auto shrink-0 px-4 text-sm [&>span]:gap-0.5 [&_svg]:size-4"
+                  className={sigetTablaFotosVerBotonClass}
                   ariaLabel={`Ver fotos y factura de ${row.placa}`}
                 />
                 {renderAcciones(row)}

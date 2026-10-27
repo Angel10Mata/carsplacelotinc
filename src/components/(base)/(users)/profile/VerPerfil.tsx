@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import {
   User,
-  Loader2,
   ShieldCheck,
   Shield,
   X,
@@ -17,6 +16,7 @@ import { CamposPerfil } from "./forms/CamposPerfil";
 import { CamposUsuario } from "./forms/CamposUsuario";
 import { updateProfile } from "./lib/actions";
 import { useQueryClient } from "@tanstack/react-query";
+import { ModalLoadingBody } from "@/components/ui/general-modal";
 import { cn } from "@/lib/utils";
 
 // Props
@@ -200,10 +200,7 @@ export default function VerPerfil({ isOpen, onClose, userId }: VerPerfilProps) {
           style={{ height: "calc(100% - 150px)" }}
         >
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-3 text-muted-foreground">
-              <Loader2 className="animate-spin" size={32} />
-              <p className="text-sm">Cargando información...</p>
-            </div>
+            <ModalLoadingBody minHeightClass="min-h-[10rem]" />
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3 text-red-500">
               <p className="text-sm font-bold">Error al cargar perfil</p>

@@ -7,10 +7,15 @@ import { usePublicNavActiveHash } from "./lib/use-public-nav-active";
 
 type NavPublicoEnlacesProps = {
   className?: string;
+  linkClassName?: string;
   observerMode: "app-header" | "public-header";
 };
 
-export function NavPublicoEnlaces({ className, observerMode }: NavPublicoEnlacesProps) {
+export function NavPublicoEnlaces({
+  className,
+  linkClassName,
+  observerMode,
+}: NavPublicoEnlacesProps) {
   const activeHash = usePublicNavActiveHash(observerMode);
 
   return (
@@ -23,6 +28,7 @@ export function NavPublicoEnlaces({ className, observerMode }: NavPublicoEnlaces
             href={link.href}
             className={cn(
               "group relative shrink-0 whitespace-nowrap text-sm font-bold transition-colors",
+              linkClassName,
               isActive
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",

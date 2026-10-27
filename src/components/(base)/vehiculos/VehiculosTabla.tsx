@@ -13,9 +13,19 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { PUBLIC_CATALOG_PATH } from "@/lib/app-config";
+import { PUBLIC_CATALOG_FROM_VEHICULOS_PATH } from "@/lib/app-config";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
+import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import { cn } from "@/lib/utils";
+import {
+  sigetTablaAccionesMenuBotonClass,
+  sigetTablaAnchoAccionesColStyle,
+  sigetTablaCeldaAccionesClass,
+  sigetTablaCeldaBotonCentrarClass,
+  sigetTablaCeldaBotonHeaderClass,
+  sigetTablaCeldaFotosVerClass,
+  sigetTablaFotosVerBotonClass,
+} from "@/components/ui/siget-tabla-acciones-ui";
 import {
   SigetTablaPageSizeSelect,
   type SigetTablaPageSizeValue,
@@ -42,10 +52,8 @@ import {
   vehiculosTablaToolbarFiltersClass,
   vehiculosTablaToolbarGridClass,
   vehiculosTablaToolbarSectionClass,
-  vehiculosTablaAnchoAcciones,
-  vehiculosTablaAnchoCliente,
   vehiculosTablaAnchoFactura,
-  vehiculosTablaAnchoFoto,
+  vehiculosTablaAnchoFotos,
   vehiculosTablaAnchoMarcaModelo,
   vehiculosTablaAnchoNo,
   vehiculosTablaAnchoVin,
@@ -62,8 +70,7 @@ import type { VehiculoListRow } from "./lib/zod";
 
 const cellPad = "px-3 py-3.5";
 const cellPadEstrecho = "px-1.5 py-3.5";
-const cellPadFoto = "px-1 py-3.5";
-const marcaModeloCell = "pl-2.5 pr-4";
+const marcaModeloCell = "pl-2.5 pr-1";
 type PageSize = SigetTablaPageSizeValue;
 
 function VehiculoFilaMenu({
@@ -78,7 +85,7 @@ function VehiculoFilaMenu({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-border bg-white text-brand transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className={sigetTablaAccionesMenuBotonClass}
           aria-label={`Acciones para ${row.placa}`}
         >
           <EllipsisVertical className="size-5" aria-hidden />
@@ -116,7 +123,7 @@ function FotoCell({
       morphFrom={ImageNode}
       morphTo={ImagesNode}
       onClick={onOpen}
-      className="h-11 w-auto shrink-0 px-4 text-sm [&>span]:gap-0.5 [&_svg]:size-4"
+      className={sigetTablaFotosVerBotonClass}
       ariaLabel={`Ver fotos y factura de ${row.placa}`}
     />
   );
@@ -212,7 +219,7 @@ export function VehiculosTabla() {
               )}
             >
               <Link
-                href={PUBLIC_CATALOG_PATH}
+                href={PUBLIC_CATALOG_FROM_VEHICULOS_PATH}
                 className={vehiculosTablaAddOutlineButtonClass}
               >
                 <LayoutGrid className="size-4 shrink-0" aria-hidden />
@@ -230,11 +237,7 @@ export function VehiculosTabla() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex min-h-[12rem] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-brand" />
-          </div>
-        ) : null}
+        {isLoading ? <ModuleDataLoadingPanel /> : null}
 
         {!isLoading && isError ? (
           <p className="px-4 py-14 text-center text-sm font-semibold text-destructive">
@@ -246,15 +249,20 @@ export function VehiculosTabla() {
         {!isLoading && !isError ? (
           <>
           <div className={vehiculosTablaDesktopTableWrapClass}>
-          <table className="w-full table-auto border-collapse text-base">
+          <table className="w-full table-fixed border-collapse text-base">
             <colgroup>
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)} />
-              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)} />
+              <col />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
-              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)} />
-              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)} />
-              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)} />
+              <col
+                style={{
+                  width: vehiculosTablaAnchoMarcaModelo.width,
+                  maxWidth: vehiculosTablaAnchoMarcaModelo.maxWidth,
+                }}
+              />
+              <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)} />
+              <col style={sigetTablaAnchoAccionesColStyle} />
             </colgroup>
             <thead>
               <tr className={vehiculosTablaHeadRowClass}>
@@ -281,9 +289,8 @@ export function VehiculosTabla() {
                   className={cn(
                     cellPad,
                     vehiculosTablaCellDividerClass,
-                    "w-0 whitespace-nowrap text-center",
+                    "min-w-0 whitespace-nowrap text-center",
                   )}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)}
                 >
                   Cliente
                 </th>
@@ -305,20 +312,16 @@ export function VehiculosTabla() {
                 </th>
                 <th
                   className={cn(
-                    cellPadFoto,
+                    sigetTablaCeldaBotonHeaderClass,
                     vehiculosTablaCellDividerClass,
-                    "w-0 whitespace-nowrap text-center",
                   )}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)}
                 >
                   Fotos
                 </th>
                 <th
-                  className={cn(
-                    cellPadEstrecho,
-                    "whitespace-nowrap text-center",
-                  )}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
+                  className={sigetTablaCeldaBotonHeaderClass}
+                  style={sigetTablaAnchoAccionesColStyle}
                 >
                   ACC
                 </th>
@@ -364,10 +367,9 @@ export function VehiculosTabla() {
                       className={cn(
                         cellPad,
                         vehiculosTablaCellDividerClass,
-                        "w-0 max-w-[min(100%,42rem)] align-middle text-left whitespace-nowrap",
+                        "min-w-0 align-middle text-left whitespace-nowrap",
                         marcaModeloCell,
                       )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)}
                     >
                       {row.clienteNombre ? (
                         <span className="font-semibold text-foreground">
@@ -407,13 +409,12 @@ export function VehiculosTabla() {
                     </td>
                     <td
                       className={cn(
-                        cellPadFoto,
+                        sigetTablaCeldaFotosVerClass,
                         vehiculosTablaCellDividerClass,
-                        "w-0 whitespace-nowrap align-middle text-center",
                       )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFoto)}
+                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)}
                     >
-                      <div className="flex justify-center">
+                      <div className={sigetTablaCeldaBotonCentrarClass}>
                         <FotoCell
                           row={row}
                           onOpen={() => setGaleriaRow(row)}
@@ -421,13 +422,10 @@ export function VehiculosTabla() {
                       </div>
                     </td>
                     <td
-                      className={cn(
-                        cellPadEstrecho,
-                        "whitespace-nowrap align-middle text-center",
-                      )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoAcciones)}
+                      className={sigetTablaCeldaAccionesClass}
+                      style={sigetTablaAnchoAccionesColStyle}
                     >
-                      <div className="flex justify-center">
+                      <div className={sigetTablaCeldaBotonCentrarClass}>
                         <VehiculoFilaMenu
                           row={row}
                           onEditar={() => setEditarCarId(row.id)}

@@ -22,7 +22,6 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
   const [pdfLib, setPdfLib] = useState<ReactPdfModule | null>(null);
   const [baseWidth, setBaseWidth] = useState(640);
   const [numPages, setNumPages] = useState(0);
-  const [pageAspect, setPageAspect] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
 
   useEffect(() => {
     setZoom(1);
-    setPageAspect(null);
   }, [url]);
 
   useEffect(() => {
@@ -47,20 +45,15 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
 
     const update = () => {
       const w = el.clientWidth;
-      const h = el.clientHeight;
-      if (w <= 0 || h <= 0) return;
-      let fit = w;
-      if (pageAspect !== null) {
-        fit = Math.min(w, h * pageAspect);
-      }
-      setBaseWidth(Math.max(200, Math.round(fit)));
+      if (w <= 0) return;
+      setBaseWidth(Math.max(200, Math.round(w)));
     };
 
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [pageAspect]);
+  }, []);
 
   const pageWidth = Math.round(baseWidth * zoom);
 
@@ -129,7 +122,7 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
         className="flex h-full min-h-0 w-full flex-1 flex-col overflow-auto overscroll-contain p-0"
       >
         <Document
-          className="flex w-full min-w-0 flex-1 flex-col"
+          className="flex w-full min-w-0 flex-1 flex-col items-center"
           file={url}
           loading={
             <div className="flex min-h-[12rem] items-center justify-center">
@@ -150,15 +143,8 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
               width={pageWidth}
               renderTextLayer={false}
               renderAnnotationLayer={false}
-              onLoadSuccess={(page) => {
-                if (index !== 0 || pageAspect !== null) return;
-                const viewport = page.getViewport({ scale: 1 });
-                if (viewport.height > 0) {
-                  setPageAspect(viewport.width / viewport.height);
-                }
-              }}
               className={cn(
-                "mb-2 w-full max-w-none overflow-hidden rounded-none bg-white last:mb-0 [&_canvas]:!block [&_canvas]:!h-auto [&_canvas]:!w-full [&_canvas]:!max-w-full",
+                "mb-2 overflow-hidden rounded-none bg-white last:mb-0 [&_.react-pdf__Page__canvas]:!mx-auto [&_.react-pdf__Page__canvas]:!block",
                 index === 0 && "mb-0",
               )}
             />

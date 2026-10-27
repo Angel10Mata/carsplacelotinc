@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import { modalAccentClass } from "@/components/ui/general-modal";
 import { cn } from "@/lib/utils";
 import { modulePageShellClass } from "@/lib/module-layout";
@@ -64,11 +64,7 @@ export function VerDetalleCliente({ customerId }: VerDetalleClienteProps) {
           </div>
         </div>
 
-        {clienteLoading ? (
-          <div className="flex min-h-[12rem] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-brand dark:text-brand-bright" />
-          </div>
-        ) : null}
+        {clienteLoading ? <ModuleDataLoadingPanel minHeightClass="min-h-[16rem]" /> : null}
 
         {!clienteLoading && (clienteError || !cliente) ? (
           <p className="rounded-2xl border border-border py-14 text-center text-sm font-semibold text-destructive dark:border-zinc-700">

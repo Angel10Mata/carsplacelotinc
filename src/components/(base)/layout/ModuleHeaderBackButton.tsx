@@ -8,15 +8,19 @@ import { getModuleBackHref } from "@/lib/module-back-href";
 type ModuleHeaderBackButtonProps = {
   className?: string;
   size?: "sm" | "md";
+  href?: string;
+  ariaLabel?: string;
 };
 
 export function ModuleHeaderBackButton({
   className,
   size = "md",
+  href: hrefProp,
+  ariaLabel = "Regresar",
 }: ModuleHeaderBackButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const href = getModuleBackHref(pathname);
+  const href = hrefProp ?? getModuleBackHref(pathname);
 
   if (!href) return null;
 
@@ -27,7 +31,7 @@ export function ModuleHeaderBackButton({
     <button
       type="button"
       onClick={() => router.push(href)}
-      aria-label="Regresar"
+      aria-label={ariaLabel}
       className={cn(
         "flex shrink-0 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10",
         "text-brand transition-colors hover:bg-brand/20 dark:text-brand-bright dark:hover:bg-brand-bright/15 cursor-pointer",

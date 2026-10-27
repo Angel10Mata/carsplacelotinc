@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useActionState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { login, getPublicAppSettings, type ActionState } from "./actions";
@@ -14,6 +15,7 @@ import {
   KeyRound,
   User,
   ArrowBigUpDash,
+  CarFront,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuroraText } from "@/components/ui/aurora-text";
@@ -21,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTheme } from "next-themes";
 import Swal from "sweetalert2";
 import AppLogoLogin from "@/components/(base)/brand/AppLogoLogin";
-import { APP_BASE_PATH } from "@/lib/app-config";
+import { APP_BASE_PATH, PUBLIC_CATALOG_PATH } from "@/lib/app-config";
 
 export default function IniciarSesion() {
   const [mounted, setMounted] = useState(false);
@@ -321,6 +323,16 @@ export default function IniciarSesion() {
               </div>
             </form>
           )}
+
+          <div className="border-t border-border/50 px-10 py-5">
+            <Link
+              href={PUBLIC_CATALOG_PATH}
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-brand bg-transparent px-4 py-3 text-sm font-bold text-brand transition-colors hover:bg-brand/10 active:scale-[0.98] dark:border-brand-bright dark:text-brand-bright dark:hover:bg-brand-bright/10"
+            >
+              <CarFront className="size-4 shrink-0" aria-hidden />
+              Volver al inventario
+            </Link>
+          </div>
         </MagicCard>
     </motion.div>
   );
