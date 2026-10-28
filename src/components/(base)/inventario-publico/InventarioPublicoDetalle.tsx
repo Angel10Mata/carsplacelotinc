@@ -1,20 +1,34 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Check, Copy, FileText, Images, X } from "lucide-react";
-import { ModalLoadingBody } from "@/components/ui/general-modal";
 import { cn } from "@/lib/utils";
 import {
   resolveVehiculoInvoiceSource,
   type VehiculoInvoiceSource,
 } from "@/components/(base)/vehiculos/lib/vehiculo-galeria-items";
-import { CarPdfInlineViewer } from "@/components/(base)/vehiculos/forms/CarPdfInlineViewer";
 import { createGeneratedInvoiceBlobUrl } from "@/components/(base)/vehiculos/lib/vehiculo-invoice-pdf-client";
 import { loadReactPdf, prefetchInvoicePdfLibs } from "@/components/(base)/vehiculos/lib/vehiculo-react-pdf";
 import { vehiculosTablaAddOutlineButtonClass } from "@/components/(base)/vehiculos/lib/tabla-vehiculos-ui";
 import type { VehiculoListRow } from "@/components/(base)/vehiculos/lib/zod";
 import type { PublicInventoryItem } from "./lib/zod";
+
+const invoicePdfViewerLoader = () =>
+  import("@/components/(base)/vehiculos/forms/CarPdfInlineViewer").then(
+    (m) => m.CarPdfInlineViewer,
+  );
+
+const CarPdfInlineViewer = dynamic(invoicePdfViewerLoader, {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center">
+      <span className="size-8 rounded-full border-2 border-brand/25 border-t-brand animate-spin dark:border-brand-bright/25 dark:border-t-brand-bright" />
+    </div>
+  ),
+});
 
 const inventarioDetalleToggleFooterClass =
   "flex shrink-0 justify-center border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6";
@@ -27,15 +41,16 @@ const inventarioDetalleToggleBtnClass = cn(
 const inventarioDetalleInvoicePanelClass =
   "relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900";
 
+const viewFadeTransition = {
+  duration: 0.38,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+
 type InventarioPublicoDetalleProps = {
   item: PublicInventoryItem | null;
   isOpen: boolean;
   onClose: () => void;
 };
-
-function InvoicePdfLoading() {
-  return <ModalLoadingBody minHeightClass="min-h-[14rem]" className="h-full min-h-0" />;
-}
 
 function InvoicePanel({
   invoiceSource,
@@ -54,15 +69,19 @@ function InvoicePanel({
     return <CarPdfInlineViewer url={invoiceSource.url} className={viewerClassName} />;
   }
 
-  if (generatedLoading) {
-    return <InvoicePdfLoading />;
-  }
-
-  if (generatedError || !generatedBlobUrl) {
+  if (generatedError) {
     return (
       <p className="flex flex-1 items-center justify-center px-4 py-8 text-center text-sm font-semibold text-destructive">
         No se pudo cargar la factura.
       </p>
+    );
+  }
+
+  if (generatedLoading || !generatedBlobUrl) {
+    return (
+      <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center">
+        <span className="size-8 rounded-full border-2 border-brand/25 border-t-brand animate-spin dark:border-brand-bright/25 dark:border-t-brand-bright" />
+      </div>
     );
   }
 
@@ -122,23 +141,27 @@ export function InventarioPublicoDetalle({
 
     prefetchInvoicePdfLibs();
     void loadReactPdf();
+    void invoicePdfViewerLoader();
 
-    const clearGeneratedBlob = () => {
+    let active = true;
+    let prefetchedUrl: string | null = null;
+
+    if (invoiceKind !== "generated-invoice") {
       setGeneratedBlobUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
       });
-    };
-
-    if (invoiceKind !== "generated-invoice") {
-      clearGeneratedBlob();
       setGeneratedLoading(false);
       setGeneratedError(false);
-      return;
+      return () => {
+        active = false;
+      };
     }
 
-    let active = true;
-    clearGeneratedBlob();
+    setGeneratedBlobUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     setGeneratedLoading(true);
     setGeneratedError(false);
 
@@ -148,15 +171,13 @@ export function InventarioPublicoDetalle({
           URL.revokeObjectURL(url);
           return;
         }
-        setGeneratedBlobUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return url;
-        });
+        prefetchedUrl = url;
+        setGeneratedBlobUrl(url);
       })
       .catch((err) => {
         console.error("prefetch generated invoice:", err);
         if (active) {
-          clearGeneratedBlob();
+          setGeneratedBlobUrl(null);
           setGeneratedError(true);
         }
       })
@@ -166,15 +187,17 @@ export function InventarioPublicoDetalle({
 
     return () => {
       active = false;
-      clearGeneratedBlob();
+      if (prefetchedUrl) URL.revokeObjectURL(prefetchedUrl);
+      setGeneratedBlobUrl(null);
       setGeneratedLoading(false);
     };
-  }, [isOpen, itemId ?? "", invoiceKind ?? ""]);
+  }, [isOpen, itemId, invoiceKind]);
 
   if (!isOpen || !item || !invoiceSource) return null;
 
   const images = item.imageUrls.length > 0 ? item.imageUrls : [];
   const activeSrc = images[activeImage];
+  const showingPhotos = viewMode === "photos";
 
   const copyVin = () => {
     if (!item.vin) return;
@@ -193,7 +216,11 @@ export function InventarioPublicoDetalle({
         aria-hidden
       />
 
-      <div className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border-y border-black/10 bg-white shadow-2xl dark:border-white/10 dark:bg-black sm:rounded-lg sm:border">
+      <div
+        className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-none border-y border-black/10 bg-white shadow-2xl dark:border-white/10 dark:bg-black sm:rounded-lg sm:border"
+        onClick={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -251,90 +278,98 @@ export function InventarioPublicoDetalle({
           </div>
         </div>
 
-        {viewMode === "photos" ? (
-          <>
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-gray-50 dark:bg-black sm:flex-row">
-              <div className="relative h-full w-full flex-1">
-                {activeSrc ? (
-                  <Image
-                    key={`${item.id}-${activeImage}`}
-                    src={activeSrc}
-                    alt={item.title}
-                    fill
-                    className={cn(
-                      "object-contain p-4 transition-all duration-700",
-                      isImageLoading
-                        ? "scale-95 opacity-0 blur-sm"
-                        : "scale-100 opacity-100 blur-0",
-                    )}
-                    sizes="(max-width: 768px) 100vw, 80vw"
-                    priority
-                    onLoad={() => setIsImageLoading(false)}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm font-semibold text-muted-foreground">
-                    Sin fotografías
-                  </div>
-                )}
-              </div>
-
-              {images.length > 1 ? (
-                <div className="flex h-24 w-full shrink-0 gap-2 overflow-x-auto border-t border-black/5 bg-black/[0.02] p-3 dark:border-white/5 dark:bg-white/[0.01] sm:h-full sm:w-24 sm:flex-col sm:overflow-y-auto sm:border-l sm:border-t-0">
-                  {images.map((img, idx) => (
-                    <button
-                      key={img}
-                      type="button"
-                      onClick={() => setActiveImage(idx)}
-                      className={cn(
-                        "relative aspect-square h-full shrink-0 overflow-hidden rounded-xl border-2 transition-all sm:h-auto sm:w-full",
-                        activeImage === idx
-                          ? "scale-105 border-primary"
-                          : "border-transparent opacity-40 hover:opacity-100 dark:opacity-30",
-                      )}
-                    >
-                      <Image src={img} alt="" fill className="object-cover" sizes="96px" />
-                    </button>
-                  ))}
+        <div className="relative min-h-0 flex-1">
+          <motion.div
+            className="absolute inset-0 flex flex-col overflow-hidden bg-gray-50 dark:bg-black sm:flex-row"
+            initial={false}
+            animate={{ opacity: showingPhotos ? 1 : 0 }}
+            transition={viewFadeTransition}
+            style={{ pointerEvents: showingPhotos ? "auto" : "none" }}
+            aria-hidden={!showingPhotos}
+          >
+            <div className="relative h-full w-full flex-1">
+              {activeSrc ? (
+                <Image
+                  key={`${item.id}-${activeImage}`}
+                  src={activeSrc}
+                  alt={item.title}
+                  fill
+                  className={cn(
+                    "object-contain p-4 transition-all duration-700",
+                    isImageLoading
+                      ? "scale-95 opacity-0 blur-sm"
+                      : "scale-100 opacity-100 blur-0",
+                  )}
+                  sizes="(max-width: 768px) 100vw, 80vw"
+                  priority
+                  onLoad={() => setIsImageLoading(false)}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm font-semibold text-muted-foreground">
+                  Sin fotografías
                 </div>
-              ) : null}
+              )}
             </div>
 
-            <div className={inventarioDetalleToggleFooterClass}>
-              <button
-                type="button"
-                onClick={() => setViewMode("invoice")}
-                className={inventarioDetalleToggleBtnClass}
-              >
+            {images.length > 1 ? (
+              <div className="flex h-24 w-full shrink-0 gap-2 overflow-x-auto border-t border-black/5 bg-black/[0.02] p-3 dark:border-white/5 dark:bg-white/[0.01] sm:h-full sm:w-24 sm:flex-col sm:overflow-y-auto sm:border-l sm:border-t-0">
+                {images.map((img, idx) => (
+                  <button
+                    key={img}
+                    type="button"
+                    onClick={() => setActiveImage(idx)}
+                    className={cn(
+                      "relative aspect-square h-full shrink-0 overflow-hidden rounded-xl border-2 transition-all sm:h-auto sm:w-full",
+                      activeImage === idx
+                        ? "scale-105 border-primary"
+                        : "border-transparent opacity-40 hover:opacity-100 dark:opacity-30",
+                    )}
+                  >
+                    <Image src={img} alt="" fill className="object-cover" sizes="96px" />
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </motion.div>
+
+          <motion.div
+            className="absolute inset-0 flex flex-col overflow-hidden bg-gray-50 p-4 dark:bg-black sm:p-6"
+            initial={false}
+            animate={{ opacity: showingPhotos ? 0 : 1 }}
+            transition={viewFadeTransition}
+            style={{ pointerEvents: showingPhotos ? "none" : "auto" }}
+            aria-hidden={showingPhotos}
+          >
+            <div className={inventarioDetalleInvoicePanelClass}>
+              <InvoicePanel
+                invoiceSource={invoiceSource}
+                generatedBlobUrl={generatedBlobUrl}
+                generatedLoading={generatedLoading}
+                generatedError={generatedError}
+              />
+            </div>
+          </motion.div>
+        </div>
+
+        <div className={inventarioDetalleToggleFooterClass}>
+          <button
+            type="button"
+            onClick={() => setViewMode(showingPhotos ? "invoice" : "photos")}
+            className={inventarioDetalleToggleBtnClass}
+          >
+            {showingPhotos ? (
+              <>
                 <FileText className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
                 Invoice
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden bg-gray-50 p-4 dark:bg-black sm:p-6">
-              <div className={inventarioDetalleInvoicePanelClass}>
-                <InvoicePanel
-                  invoiceSource={invoiceSource}
-                  generatedBlobUrl={generatedBlobUrl}
-                  generatedLoading={generatedLoading}
-                  generatedError={generatedError}
-                />
-              </div>
-            </div>
-
-            <div className={inventarioDetalleToggleFooterClass}>
-              <button
-                type="button"
-                onClick={() => setViewMode("photos")}
-                className={inventarioDetalleToggleBtnClass}
-              >
+              </>
+            ) : (
+              <>
                 <Images className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
                 Fotos
-              </button>
-            </div>
-          </>
-        )}
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

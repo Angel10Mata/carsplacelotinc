@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { TCPL_BRAND_RED } from "@/lib/brand-colors";
+import { formatFechaManualGt } from "@/lib/fechas-gt";
 import { ReporteriaCard, ReporteriaKpiCard } from "./lib/reporteria-ui";
 import type { IngresoVehiculoPunto } from "./lib/zod";
 
@@ -19,24 +20,33 @@ type IngresosDotProps = {
   payload?: IngresoVehiculoPunto;
 };
 
-function IngresosDot({ cx, cy, payload }: IngresosDotProps) {
+function IngresosDot({
+  cx,
+  cy,
+  payload,
+  diaActivo,
+}: IngresosDotProps & { diaActivo?: string }) {
   if (cx == null || cy == null || !payload || payload.ingresos <= 0) {
     return null;
   }
+
+  const activo = Boolean(diaActivo && payload.fecha === diaActivo);
+  const halo = activo ? 9 : 7;
+  const nucleo = activo ? 5.5 : 4.5;
 
   return (
     <g>
       <circle
         cx={cx}
         cy={cy}
-        r={7}
+        r={halo}
         fill={TCPL_BRAND_RED.primary}
-        fillOpacity={0.18}
+        fillOpacity={activo ? 0.28 : 0.18}
       />
       <circle
         cx={cx}
         cy={cy}
-        r={4.5}
+        r={nucleo}
         fill={TCPL_BRAND_RED.primary}
         stroke="#ffffff"
         strokeWidth={2}
@@ -54,16 +64,20 @@ function IngresosTooltip({
 }) {
   if (!active || !payload?.[0]) return null;
   const punto = payload[0].payload;
+  const tituloFecha =
+    punto.fecha.length === 10
+      ? formatFechaManualGt(punto.fecha)
+      : punto.label;
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
       <p className="text-xs font-bold uppercase tracking-widest text-brand dark:text-brand-bright">
-        {punto.label}
+        {tituloFecha}
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">
         {punto.ingresos === 0
-          ? "Sin registros"
-          : `${punto.ingresos} vehículo${punto.ingresos === 1 ? "" : "s"}`}
+          ? "Sin compras"
+          : `${punto.ingresos} compra${punto.ingresos === 1 ? "" : "s"}`}
       </p>
       {punto.vehiculos.length > 0 ? (
         <ul className="mt-2 space-y-1">
@@ -86,24 +100,21 @@ function IngresosTooltip({
 type GraficasIngresosVehiculosProps = {
   puntos: IngresoVehiculoPunto[];
   registrados: number;
-  diasConIngreso: number;
   ultimoFechaLabel: string;
-  descripcion: string;
+  diaActivo?: string;
 };
 
 export function GraficasIngresosVehiculos({
   puntos,
   registrados,
-  diasConIngreso,
   ultimoFechaLabel,
-  descripcion,
+  diaActivo,
 }: GraficasIngresosVehiculosProps) {
   return (
-    <ReporteriaCard title="Ingresos de vehículos" description={descripcion}>
-      <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-3 md:px-6">
-        <ReporteriaKpiCard label="Registrados" value={String(registrados)} />
-        <ReporteriaKpiCard label="Días con ingreso" value={String(diasConIngreso)} />
-        <ReporteriaKpiCard label="Último registro" value={ultimoFechaLabel} />
+    <ReporteriaCard title="Compras de vehículos">
+      <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:px-6">
+        <ReporteriaKpiCard label="Comprados" value={String(registrados)} />
+        <ReporteriaKpiCard label="Última compra" value={ultimoFechaLabel} />
       </div>
 
       <div className="h-[22rem] w-full px-1 pb-4 md:px-3">
@@ -142,6 +153,7 @@ export function GraficasIngresosVehiculos({
             />
             <YAxis
               allowDecimals={false}
+              domain={[0, "auto"]}
               tickLine={false}
               axisLine={false}
               width={28}
@@ -157,12 +169,12 @@ export function GraficasIngresosVehiculos({
               content={<IngresosTooltip />}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="ingresos"
               stroke={TCPL_BRAND_RED.primary}
               strokeWidth={2.5}
               fill="url(#ingresosVehiculosFill)"
-              dot={<IngresosDot />}
+              dot={<IngresosDot diaActivo={diaActivo} />}
               activeDot={{
                 r: 6,
                 fill: TCPL_BRAND_RED.bright,

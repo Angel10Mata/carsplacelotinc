@@ -4,7 +4,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,8 +14,7 @@ import { formatMonedaUsd } from "./lib/helpers";
 import { ReporteriaCard, ReporteriaKpiCard } from "./lib/reporteria-ui";
 import type { DineroMesPunto } from "./lib/zod";
 
-const COLOR_VENDIDO = "#16a34a";
-const COLOR_LOTE = TCPL_BRAND_RED.primary;
+const COLOR_COMPRA_SALIDA = TCPL_BRAND_RED.primary;
 
 function DineroTooltip({
   active,
@@ -33,12 +31,27 @@ function DineroTooltip({
       <p className="text-xs font-bold uppercase tracking-widest text-brand dark:text-brand-bright">
         {punto.label}
       </p>
-      <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-        Vendido {formatMonedaUsd(punto.vendido)}
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {punto.vendido <= 0
+          ? "Sin compras"
+          : `Compra de: ${formatMonedaUsd(punto.vendido)}`}
       </p>
-      <p className="text-sm font-semibold text-brand dark:text-brand-bright">
-        En lote {formatMonedaUsd(punto.lote)}
-      </p>
+      {punto.vehiculos.length > 0 ? (
+        <ul className="mt-2 space-y-1">
+          {punto.vehiculos.map((vehiculo) => (
+            <li
+              key={vehiculo.id}
+              className="text-xs font-medium text-muted-foreground"
+            >
+              <span className="font-bold text-foreground">{vehiculo.factura}</span>
+              {" · "}
+              {vehiculo.titulo}
+              {" · "}
+              {formatMonedaUsd(vehiculo.monto)}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -46,30 +59,20 @@ function DineroTooltip({
 type GraficasDineroVehiculosProps = {
   puntos: DineroMesPunto[];
   vendido: number;
-  lote: number;
   unidadesVendidas: number;
-  unidadesLote: number;
-  descripcion: string;
 };
 
 export function GraficasDineroVehiculos({
   puntos,
   vendido,
-  lote,
   unidadesVendidas,
-  unidadesLote,
-  descripcion,
 }: GraficasDineroVehiculosProps) {
   return (
-    <ReporteriaCard title="Dinero" description={descripcion}>
-      <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:px-6">
+    <ReporteriaCard title="Montos de compra">
+      <div className="px-4 py-4 md:px-6">
         <ReporteriaKpiCard
-          label={`Vendido · ${unidadesVendidas}`}
+          label={`Con salida · ${unidadesVendidas}`}
           value={formatMonedaUsd(vendido)}
-        />
-        <ReporteriaKpiCard
-          label={`En lote · ${unidadesLote}`}
-          value={formatMonedaUsd(lote)}
         />
       </div>
 
@@ -110,12 +113,11 @@ export function GraficasDineroVehiculos({
               cursor={{ fill: "rgb(24 24 27 / 0.06)" }}
               content={<DineroTooltip />}
             />
-            <Legend
-              wrapperStyle={{ fontSize: 12, fontWeight: 700 }}
-              formatter={(value) => (value === "vendido" ? "Vendido" : "En lote")}
+            <Bar
+              dataKey="vendido"
+              fill={COLOR_COMPRA_SALIDA}
+              radius={[8, 8, 0, 0]}
             />
-            <Bar dataKey="vendido" fill={COLOR_VENDIDO} radius={[8, 8, 0, 0]} />
-            <Bar dataKey="lote" fill={COLOR_LOTE} radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

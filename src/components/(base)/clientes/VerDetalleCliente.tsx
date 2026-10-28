@@ -54,7 +54,7 @@ export function VerDetalleCliente({ customerId }: VerDetalleClienteProps) {
           if (!next) setEditarCarId(null);
         }}
       />
-      <div className={cn(modulePageShellClass, "min-h-0 pt-3 pb-8 md:pt-2 mt-0")}>
+      <div className={cn(modulePageShellClass, "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0")}>
         <div className="mb-4 flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <ModuleHeaderBackButton />

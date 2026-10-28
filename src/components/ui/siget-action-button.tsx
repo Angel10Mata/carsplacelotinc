@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import type { IconNode } from "lucide";
 import { MorphHoverIcon } from "@/components/ui/morph-hover-icon";
 import { RippleButton } from "@/components/ui/ripple-button";
@@ -69,6 +69,7 @@ export function SigetActionButton({
   morphOnHover = true,
   type = "button",
   iconOnly = false,
+  style,
 }: {
   label: string;
   accentColor: string;
@@ -85,6 +86,7 @@ export function SigetActionButton({
   morphOnHover?: boolean;
   type?: "button" | "submit";
   iconOnly?: boolean;
+  style?: CSSProperties;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -98,6 +100,7 @@ export function SigetActionButton({
       aria-checked={ariaChecked}
       aria-busy={ariaBusy || undefined}
       disabled={disabled}
+      style={style}
       onPointerEnter={morphOnHover ? () => setHovered(true) : undefined}
       onPointerLeave={morphOnHover ? () => setHovered(false) : undefined}
       className={cn(

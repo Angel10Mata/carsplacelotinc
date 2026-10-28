@@ -4,15 +4,13 @@ import type { RankingCliente } from "./lib/zod";
 
 type RankingClientesReporteriaProps = {
   clientes: RankingCliente[];
-  descripcion: string;
 };
 
 export function RankingClientesReporteria({
   clientes,
-  descripcion,
 }: RankingClientesReporteriaProps) {
   return (
-    <ReporteriaCard title="Clientes" description={descripcion}>
+    <ReporteriaCard title="Clientes">
       {clientes.length === 0 ? (
         <p className="px-4 py-12 text-center text-sm font-semibold text-muted-foreground md:px-6">
           No hay clientes en el periodo seleccionado.
@@ -25,7 +23,7 @@ export function RankingClientesReporteria({
                 <th className="px-4 py-3 md:px-6">Cliente</th>
                 <th className="px-4 py-3 md:px-6">NIT</th>
                 <th className="px-4 py-3 text-right md:px-6">Unidades</th>
-                <th className="px-4 py-3 text-right md:px-6">Monto</th>
+                <th className="px-4 py-3 text-right md:px-6">Monto compra</th>
               </tr>
             </thead>
             <tbody>

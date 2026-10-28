@@ -8,7 +8,7 @@ const ZOOM_MIN = 1;
 const ZOOM_MAX = 2.75;
 const ZOOM_STEP = 0.25;
 
-import { loadReactPdf } from "../lib/vehiculo-react-pdf";
+import { getLoadedReactPdf, loadReactPdf } from "../lib/vehiculo-react-pdf";
 
 type ReactPdfModule = typeof import("react-pdf");
 
@@ -19,7 +19,9 @@ type CarPdfInlineViewerProps = {
 
 export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pdfLib, setPdfLib] = useState<ReactPdfModule | null>(null);
+  const [pdfLib, setPdfLib] = useState<ReactPdfModule | null>(
+    () => getLoadedReactPdf(),
+  );
   const [baseWidth, setBaseWidth] = useState(640);
   const [numPages, setNumPages] = useState(0);
   const [zoom, setZoom] = useState(1);

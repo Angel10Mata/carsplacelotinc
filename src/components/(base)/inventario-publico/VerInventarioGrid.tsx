@@ -35,7 +35,7 @@ export function VerInventarioGrid() {
         className={cn(
           modulePageShellClass,
           sectionScrollMarginEmbedded,
-          "min-h-0 pt-3 pb-8 md:pt-2 mt-0",
+          "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0",
         )}
       >
         <InventarioPublicoSeccion

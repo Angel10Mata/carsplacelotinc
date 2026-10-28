@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Image as ImageNode, Images as ImagesNode } from "lucide";
-import { ChevronLeft, ChevronRight, EllipsisVertical, Loader2, PenSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, EllipsisVertical, PenSquare } from "lucide-react";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
+import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import {
   SigetTablaPageSizeSelect,
   type SigetTablaPageSizeValue,
@@ -133,11 +134,7 @@ export function ClienteDetalleVehiculosTabla({
     <div className={cn("flex w-full min-w-0 flex-col shrink-0", vehiculosTablaCardShellClass)}>
       <div className={vehiculosTablaAccentBarClass} aria-hidden />
       <div className="flex min-h-0 flex-1 flex-col bg-card dark:bg-zinc-900/40">
-        {isLoading ? (
-          <div className="flex min-h-[12rem] items-center justify-center">
-            <Loader2 className="size-8 animate-spin text-brand" />
-          </div>
-        ) : null}
+        {isLoading ? <ModuleDataLoadingPanel /> : null}
 
         {!isLoading && isError ? (
           <p className="px-4 py-14 text-center text-sm font-semibold text-destructive">
@@ -152,8 +149,14 @@ export function ClienteDetalleVehiculosTabla({
               <colgroup>
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)} />
-                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
                 <col />
+                <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
+                <col
+                  style={{
+                    width: vehiculosTablaAnchoMarcaModelo.width,
+                    maxWidth: vehiculosTablaAnchoMarcaModelo.maxWidth,
+                  }}
+                />
                 <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)} />
                 <col style={sigetTablaAnchoAccionesColStyle} />
               </colgroup>
@@ -175,9 +178,17 @@ export function ClienteDetalleVehiculosTabla({
                       vehiculosTablaCellDividerClass,
                       "whitespace-nowrap text-center",
                     )}
-                    style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)}
                   >
                     Factura
+                  </th>
+                  <th
+                    className={cn(
+                      cellPad,
+                      vehiculosTablaCellDividerClass,
+                      "min-w-0 whitespace-nowrap text-center",
+                    )}
+                  >
+                    Cliente
                   </th>
                   <th
                     className={cn(cellPad, vehiculosTablaCellDividerClass, "text-center")}
@@ -216,7 +227,7 @@ export function ClienteDetalleVehiculosTabla({
                 {pageItems.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 py-14 text-center text-sm font-semibold text-muted-foreground"
                     >
                       Sin vehículos asignados a este cliente.
@@ -245,6 +256,22 @@ export function ClienteDetalleVehiculosTabla({
                         <span className="inline-flex w-max max-w-full items-center justify-center whitespace-nowrap rounded-lg bg-zinc-100 px-2.5 py-1 text-sm font-black uppercase tracking-wider text-foreground dark:bg-zinc-700">
                           {row.placa}
                         </span>
+                      </td>
+                      <td
+                        className={cn(
+                          cellPad,
+                          vehiculosTablaCellDividerClass,
+                          "min-w-0 align-middle text-left whitespace-nowrap",
+                          marcaModeloCell,
+                        )}
+                      >
+                        {row.clienteNombre ? (
+                          <span className="font-semibold text-foreground">
+                            {row.clienteNombre}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td
                         className={cn(

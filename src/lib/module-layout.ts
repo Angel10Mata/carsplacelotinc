@@ -6,8 +6,8 @@ export const modulePageShellClass = [
   "w-full",
   moduleContentMaxWidth,
   "mx-auto flex flex-col gap-6",
-  "px-3 sm:px-4 md:px-5",
-  "pt-32 pb-8 md:pt-28",
+  "px-0 md:px-5",
+  "pt-32 pb-0 md:pt-28 md:pb-8",
   "relative mt-4 md:mt-8 min-h-screen",
 ].join(" ");
 
@@ -15,13 +15,13 @@ export const modulePageShellFixedClass = [
   "w-full",
   moduleContentMaxWidth,
   "mx-auto flex flex-col gap-6",
-  "px-3 sm:px-4 md:px-5",
-  "pt-32 pb-8 md:pt-28",
+  "px-0 md:px-5",
+  "pt-32 pb-0 md:pt-28 md:pb-8",
   "relative mt-4 md:mt-8 flex-1 min-h-0 h-screen",
 ].join(" ");
 
 export const dashboardOuterClass =
-  "relative z-10 w-full flex-1 flex flex-col items-center justify-center px-3 sm:px-4 md:px-5 lg:px-6 py-10 md:py-12";
+  "relative z-10 w-full flex-1 flex flex-col items-stretch justify-start px-3 sm:px-4 md:px-5 lg:px-6 py-4 pb-6 md:py-12 min-h-0 md:mt-8";
 
 export const dashboardInnerClass = [
   "w-full",

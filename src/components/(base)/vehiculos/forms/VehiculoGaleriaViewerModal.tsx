@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, FileText, Images } from "lucide-react";
+import { Copy, FileText, Images, X } from "lucide-react";
 import { Download as DownloadNode } from "lucide";
 import { ModalLoadingBody, ModalShell, toast } from "@/components/ui/general-modal";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
@@ -251,63 +251,58 @@ export function VehiculoGaleriaViewerModal({
       headerClassName="hidden"
       contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-0 md:p-0"
     >
-      <div className="flex shrink-0 flex-col gap-2 border-b border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              {estado ? (
-                <span className="rounded-md bg-red-100 px-2 py-0.5 text-red-700 dark:bg-red-950/50 dark:text-red-300">
-                  {estado}
-                </span>
-              ) : null}
-              <span>{formatInvoiceDateEn(row.invoiceDate)}</span>
-            </div>
-            <h2 className="text-lg font-black italic leading-tight text-foreground md:text-xl">
-              {titulo}
-              {precio ? (
-                <span className="ml-2 font-black not-italic text-foreground">
-                  {precio}
-                </span>
-              ) : null}
-            </h2>
-            {row.vin ? (
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span className="font-mono text-xs uppercase tracking-wide">
-                  VIN: {row.vin}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void copyVin()}
-                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-200/80 text-brand transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-brand-bright dark:hover:bg-zinc-800"
-                  aria-label="Copiar VIN"
-                >
-                  <Copy size={14} />
-                </button>
-              </div>
-            ) : null}
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {viewMode === "invoice" ? (
-              <InvoiceDownloadButton
-                row={row}
-                invoiceSource={invoiceSource}
-              />
-            ) : (
-              <span
-                className="inline-flex h-9 min-w-[6.75rem] shrink-0"
-                aria-hidden
-              />
-            )}
+      <div className="relative flex shrink-0 flex-col gap-1 border-b border-zinc-200/80 px-4 py-4 pr-12 dark:border-zinc-700 md:px-6">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 flex size-9 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          aria-label="Cerrar"
+        >
+          <X className="size-5" strokeWidth={2.25} />
+        </button>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {estado ? (
+            <span
+              className={cn(
+                "text-[11px] font-black italic uppercase tracking-wide",
+                estado === "AVAILABLE"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-red-600 dark:text-red-400",
+              )}
+            >
+              {estado}
+            </span>
+          ) : null}
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">
+            {formatInvoiceDateEn(row.invoiceDate)}
+          </span>
+        </div>
+
+        <h2 className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-lg font-black italic uppercase leading-none tracking-tight text-foreground md:text-xl">
+          <span>{titulo}</span>
+          {precio ? (
+            <span className="font-black italic text-foreground">
+              {precio}
+            </span>
+          ) : null}
+        </h2>
+
+        {row.vin ? (
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-mono text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              VIN: {row.vin}
+            </span>
             <button
               type="button"
-              onClick={onClose}
-              className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200/80 text-muted-foreground transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-              aria-label="Cerrar"
+              onClick={() => void copyVin()}
+              className="inline-flex cursor-pointer p-0.5 text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200"
+              aria-label="Copiar VIN"
             >
-              <span className="text-xl leading-none">×</span>
+              <Copy className="size-3.5" strokeWidth={2.25} />
             </button>
           </div>
-        </div>
+        ) : null}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-0">
@@ -380,7 +375,11 @@ export function VehiculoGaleriaViewerModal({
               </div>
             </div>
 
-            <div className="flex shrink-0 justify-center border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6">
+            <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6">
+              <InvoiceDownloadButton
+                row={row}
+                invoiceSource={invoiceSource}
+              />
               <button
                 type="button"
                 onClick={() => setViewMode("photos")}

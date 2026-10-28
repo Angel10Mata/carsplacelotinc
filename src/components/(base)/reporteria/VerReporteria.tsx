@@ -7,16 +7,14 @@ import { cn } from "@/lib/utils";
 import { modulePageShellClass } from "@/lib/module-layout";
 import { GraficasDineroVehiculos } from "./GraficasDineroVehiculos";
 import { GraficasIngresosVehiculos } from "./GraficasIngresosVehiculos";
-import { RankingClientesReporteria } from "./RankingClientesReporteria";
 import { ReporteriaFiltros } from "./ReporteriaFiltros";
 import {
   buildDineroPorMes,
   buildIngresosVehiculosSerie,
-  buildRankingClientes,
-  etiquetaFiltroCalendario,
   filasEnPeriodo,
   filtroCalendarioInicial,
   resolverRangoCalendario,
+  resolverRangoGraficaCompras,
   resumenDineroVehiculos,
   resumenIngresosVehiculos,
 } from "./lib/helpers";
@@ -26,7 +24,7 @@ import type { ReporteriaCampoFecha, ReporteriaFiltroCalendario } from "./lib/zod
 export function VerReporteria() {
   const [mounted, setMounted] = useState(false);
   const [filtro, setFiltro] = useState<ReporteriaFiltroCalendario | null>(null);
-  const [campo, setCampo] = useState<ReporteriaCampoFecha>("factura");
+  const [campo, setCampo] = useState<ReporteriaCampoFecha>("registro");
   const { data = [], isPending, isError } = useReporteriaVehiculos();
 
   useEffect(() => {
@@ -39,6 +37,11 @@ export function VerReporteria() {
     [filtro, mounted],
   );
 
+  const rangoGrafica = useMemo(
+    () => (mounted && filtro ? resolverRangoGraficaCompras(filtro) : null),
+    [filtro, mounted],
+  );
+
   const filas = useMemo(
     () =>
       mounted && rango
@@ -47,26 +50,39 @@ export function VerReporteria() {
     [campo, data, mounted, rango],
   );
 
+  const filasGrafica = useMemo(
+    () =>
+      mounted && rangoGrafica
+        ? filasEnPeriodo(data, campo, rangoGrafica.inicio, rangoGrafica.fin)
+        : [],
+    [campo, data, mounted, rangoGrafica],
+  );
+
   const ingresos = useMemo(() => {
-    if (!rango) {
+    if (!rango || !rangoGrafica) {
       return {
         puntos: [],
         vehiculos: 0,
-        diasConIngreso: 0,
         ultimoFechaLabel: "—",
       };
     }
-    const puntos = buildIngresosVehiculosSerie(
+    const puntosKpi = buildIngresosVehiculosSerie(
       filas,
       campo,
       rango.inicio,
       rango.fin,
     );
-    return { puntos, ...resumenIngresosVehiculos(puntos) };
-  }, [campo, filas, rango]);
+    const puntos = buildIngresosVehiculosSerie(
+      filasGrafica,
+      campo,
+      rangoGrafica.inicio,
+      rangoGrafica.fin,
+    );
+    return { puntos, ...resumenIngresosVehiculos(puntosKpi) };
+  }, [campo, filas, filasGrafica, rango, rangoGrafica]);
 
   const dinero = useMemo(() => {
-    if (!rango) {
+    if (!rango || !rangoGrafica) {
       return {
         puntos: [],
         vendido: 0,
@@ -76,34 +92,29 @@ export function VerReporteria() {
       };
     }
     return {
-      puntos: buildDineroPorMes(filas, campo, rango.inicio, rango.fin),
+      puntos: buildDineroPorMes(
+        filasGrafica,
+        campo,
+        rangoGrafica.inicio,
+        rangoGrafica.fin,
+      ),
       ...resumenDineroVehiculos(filas),
     };
-  }, [campo, filas, rango]);
-
-  const clientes = useMemo(
-    () => (mounted ? buildRankingClientes(filas) : []),
-    [filas, mounted],
-  );
-
-  const periodoLabel = filtro ? etiquetaFiltroCalendario(filtro) : "";
-  const campoLabel = campo === "factura" ? "fecha de factura" : "fecha de registro";
+  }, [campo, filas, filasGrafica, rango, rangoGrafica]);
 
   return (
     <div
       className={cn(
         modulePageShellClass,
-        "min-h-0 pt-3 pb-8 md:pt-2 mt-0",
+        "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0",
       )}
     >
       <header className="mb-4 md:mb-5">
-        <div className="flex items-start gap-3 sm:items-center">
-          <ModuleHeaderBackButton className="mt-0.5 sm:mt-0" />
-          <div className="min-w-0 flex-1 py-1">
-            <h1 className="text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl md:text-4xl leading-[1.05]">
-              Reportería
-            </h1>
-          </div>
+        <div className="flex items-center gap-3 pl-3 md:pl-0">
+          <ModuleHeaderBackButton size="sm" className="translate-y-1" />
+          <h1 className="min-w-0 translate-y-1 text-2xl font-black uppercase leading-none tracking-tight text-foreground sm:text-3xl md:text-4xl">
+            Reportería
+          </h1>
         </div>
       </header>
 
@@ -129,23 +140,14 @@ export function VerReporteria() {
           <GraficasIngresosVehiculos
             puntos={ingresos.puntos}
             registrados={ingresos.vehiculos}
-            diasConIngreso={ingresos.diasConIngreso}
             ultimoFechaLabel={ingresos.ultimoFechaLabel}
-            descripcion={`${periodoLabel} por ${campoLabel}. El punto marca cada día o mes con unidades.`}
+            diaActivo={filtro.vista === "dia" ? filtro.dia : undefined}
           />
 
           <GraficasDineroVehiculos
             puntos={dinero.puntos}
             vendido={dinero.vendido}
-            lote={dinero.lote}
             unidadesVendidas={dinero.unidadesVendidas}
-            unidadesLote={dinero.unidadesLote}
-            descripcion={`${periodoLabel} por ${campoLabel}. Vendido frente a valor en lote, mes a mes.`}
-          />
-
-          <RankingClientesReporteria
-            clientes={clientes}
-            descripcion={`${periodoLabel} por ${campoLabel}. Unidades y monto por cliente.`}
           />
         </div>
       ) : null}

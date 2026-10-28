@@ -22,12 +22,10 @@ export function ReporteriaKpiCard({
 
 export function ReporteriaCard({
   title,
-  description,
   children,
   className,
 }: {
   title: string;
-  description: string;
   children: ReactNode;
   className?: string;
 }) {
@@ -38,11 +36,10 @@ export function ReporteriaCard({
         className,
       )}
     >
-      <div className="flex flex-col gap-1 border-b border-border px-4 py-4 dark:border-zinc-700 md:px-6">
+      <div className="border-b border-border px-4 py-4 dark:border-zinc-700 md:px-6">
         <h2 className="text-lg font-black uppercase tracking-tight text-foreground md:text-xl">
           {title}
         </h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {children}
     </section>

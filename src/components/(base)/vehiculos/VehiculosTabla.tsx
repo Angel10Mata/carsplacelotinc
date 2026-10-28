@@ -200,7 +200,7 @@ export function VehiculosTabla() {
                 />
                 <input
                   type="search"
-                  placeholder="Buscar por factura, VIN, cliente, título o modelo..."
+                  placeholder="Buscar"
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);

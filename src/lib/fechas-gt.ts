@@ -38,6 +38,17 @@ export function normalizarMesCalendario(
   return fecha ? fecha.slice(0, 7) : "";
 }
 
+export function timestamptzToFechaCalendarioGt(
+  value: string | null | undefined,
+): string {
+  if (!value) return "";
+  const solo = normalizarFechaCalendario(value);
+  if (solo) return solo;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return fechaCalendarioGt(parsed);
+}
+
 export function ultimoDiaMesCalendario(year: number, month1to12: number): number {
   if (month1to12 < 1 || month1to12 > 12) return 0;
   return new Date(year, month1to12, 0).getDate();

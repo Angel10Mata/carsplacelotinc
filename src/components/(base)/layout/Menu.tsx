@@ -724,11 +724,11 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
         </div>
 
         <div className="mt-auto border-t border-border/60 px-5 py-4">
-          <div className="flex flex-col items-center justify-center gap-1.5">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-500">
+          <div className="flex flex-col items-center justify-center gap-2">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-400">
               © 2026 KoreAPP
             </p>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-1">
+            <div className="text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 sm:text-sm flex items-center gap-1 text-center">
               Powered by{" "}
               <a
                 href="https://www.oscar27jimenez.com"
@@ -736,7 +736,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                 rel="noopener noreferrer"
                 className="hover:underline cursor-pointer inline-flex items-center"
               >
-                <AuroraText className="text-[10px] whitespace-nowrap">
+                <AuroraText className="text-xs whitespace-nowrap sm:text-sm">
                   Kore | Ing. de Software
                 </AuroraText>
               </a>

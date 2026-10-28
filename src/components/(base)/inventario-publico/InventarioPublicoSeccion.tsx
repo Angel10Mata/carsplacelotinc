@@ -72,14 +72,14 @@ export function InventarioPublicoSeccion({
       className={cn(
         "flex w-full flex-col overflow-x-hidden bg-background",
         embedded
-          ? "min-h-0 border-0 pt-0"
+          ? "min-h-0 border-0 pt-8 sm:pt-5 md:pt-2"
           : "min-h-screen snap-start border-b border-border/40 pt-24",
       )}
     >
       <div
         className={cn(
           "mx-auto flex w-full max-w-7xl flex-col px-6 lg:px-12",
-          embeddedFromVehiculos ? "gap-3 pb-1" : "gap-0",
+          embeddedFromVehiculos ? "gap-3 pb-1 pt-2 sm:pt-0" : "gap-0",
         )}
       >
         {embeddedFromVehiculos ? (
@@ -104,7 +104,7 @@ export function InventarioPublicoSeccion({
         <div
           className={cn(
             "flex shrink-0 flex-col items-center justify-center text-center transition-all duration-1000 ease-out",
-            embeddedFromVehiculos ? "-mt-10 pt-0 sm:-mt-11" : "px-0",
+            embeddedFromVehiculos ? "pt-1 sm:-mt-10 sm:pt-0 lg:-mt-11" : "px-0",
             showGrid ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
           )}
         >

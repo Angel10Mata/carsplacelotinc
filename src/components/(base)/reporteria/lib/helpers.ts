@@ -3,10 +3,14 @@ import {
   fechaCalendarioGt,
   formatFechaCalendarioGt,
   formatFechaManualGt,
+  LOCALE_GT,
+  TIMEZONE_GT,
+  timestamptzToFechaCalendarioGt,
   ultimoDiaMesCalendario,
 } from "@/lib/fechas-gt";
 import type {
   DineroMesPunto,
+  DineroVehiculoLinea,
   IngresoVehiculoMarca,
   IngresoVehiculoPunto,
   RankingCliente,
@@ -61,9 +65,7 @@ export function fechaFilaVehiculo(
   campo: ReporteriaCampoFecha,
 ): string {
   const raw = campo === "factura" ? row.invoice_date : row.created_at;
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return fechaCalendarioGt(parsed);
+  return timestamptzToFechaCalendarioGt(raw);
 }
 
 export function resolverRangoPeriodo(
@@ -106,6 +108,35 @@ export function mapIngresoVehiculoMarca(
   };
 }
 
+function mapDineroVehiculoLinea(row: ReporteriaVehiculoRow): DineroVehiculoLinea {
+  return {
+    id: row.id,
+    titulo: formatMarcaModeloDisplay(row.car_title, row.car_model),
+    factura: row.invoice_number,
+    monto: montoVehiculo(row),
+  };
+}
+
+type DineroBucket = {
+  vendido: number;
+  lote: number;
+  vehiculos: DineroVehiculoLinea[];
+};
+
+function vacioDineroBucket(): DineroBucket {
+  return { vendido: 0, lote: 0, vehiculos: [] };
+}
+
+function acumularDineroFila(bucket: DineroBucket, row: ReporteriaVehiculoRow): void {
+  const monto = montoVehiculo(row);
+  if (estatusVehiculo(row) === "AVAILABLE") {
+    bucket.lote += monto;
+    return;
+  }
+  bucket.vendido += monto;
+  bucket.vehiculos.push(mapDineroVehiculoLinea(row));
+}
+
 export function buildIngresosVehiculosSerie(
   rows: ReporteriaVehiculoRow[],
   campo: ReporteriaCampoFecha,
@@ -145,6 +176,21 @@ export function buildIngresosVehiculosSerie(
 
   const puntos: IngresoVehiculoPunto[] = [];
   const totalDias = diasEntre(inicio, fin) + 1;
+
+  if (totalDias === 1) {
+    const vehiculos = rows.map(mapIngresoVehiculoMarca);
+    puntos.push({
+      fecha: inicio,
+      label: formatFechaCalendarioGt(inicio, {
+        day: "2-digit",
+        month: "short",
+      }),
+      ingresos: vehiculos.length,
+      vehiculos,
+    });
+    return puntos;
+  }
+
   for (let offset = 0; offset < totalDias; offset += 1) {
     const fecha = addDaysCalendario(inicio, offset);
     const vehiculos = porClave.get(fecha) ?? [];
@@ -161,14 +207,39 @@ export function buildIngresosVehiculosSerie(
   return puntos;
 }
 
+export function expandirPuntosGraficaCompras(
+  puntos: IngresoVehiculoPunto[],
+  diaActivo?: string,
+): IngresoVehiculoPunto[] {
+  if (puntos.length !== 1 || puntos[0].fecha.length !== 10) return puntos;
+
+  const central =
+    diaActivo && diaActivo.length === 10
+      ? { ...puntos[0], fecha: diaActivo, label: formatFechaCalendarioGt(diaActivo, { day: "2-digit", month: "short" }) }
+      : puntos[0];
+  const vacio = (fecha: string): IngresoVehiculoPunto => ({
+    fecha,
+    label: formatFechaCalendarioGt(fecha, {
+      day: "2-digit",
+      month: "short",
+    }),
+    ingresos: 0,
+    vehiculos: [],
+  });
+
+  return [
+    vacio(addDaysCalendario(central.fecha, -1)),
+    central,
+    vacio(addDaysCalendario(central.fecha, 1)),
+  ];
+}
+
 export function resumenIngresosVehiculos(puntos: IngresoVehiculoPunto[]) {
   const vehiculos = puntos.reduce((acc, punto) => acc + punto.ingresos, 0);
-  const diasConIngreso = puntos.filter((punto) => punto.ingresos > 0).length;
   const ultimo = [...puntos].reverse().find((punto) => punto.ingresos > 0);
 
   return {
     vehiculos,
-    diasConIngreso,
     ultimoFechaLabel: ultimo
       ? ultimo.fecha.length === 7
         ? formatFechaCalendarioGt(`${ultimo.fecha}-01`, {
@@ -213,34 +284,64 @@ export function buildDineroPorMes(
   inicio: string,
   fin: string,
 ): DineroMesPunto[] {
-  const porMes = new Map<string, { vendido: number; lote: number }>();
+  const span = diasEntre(inicio, fin);
+
+  if (span > 90) {
+    const porMes = new Map<string, DineroBucket>();
+
+    for (const row of rows) {
+      const fecha = fechaFilaVehiculo(row, campo);
+      if (!fecha || fecha < inicio || fecha > fin) continue;
+      const mes = fecha.slice(0, 7);
+      const actual = porMes.get(mes) ?? vacioDineroBucket();
+      acumularDineroFila(actual, row);
+      porMes.set(mes, actual);
+    }
+
+    const puntos: DineroMesPunto[] = [];
+    let mes = inicio.slice(0, 7);
+    const mesFin = fin.slice(0, 7);
+    while (mes <= mesFin) {
+      const valores = porMes.get(mes) ?? vacioDineroBucket();
+      puntos.push({
+        mes,
+        label: formatFechaCalendarioGt(`${mes}-01`, {
+          month: "short",
+          year: "numeric",
+        }),
+        vendido: valores.vendido,
+        lote: valores.lote,
+        vehiculos: valores.vehiculos,
+      });
+      mes = addMonthsCalendario(mes, 1);
+    }
+    return puntos;
+  }
+
+  const porDia = new Map<string, DineroBucket>();
 
   for (const row of rows) {
     const fecha = fechaFilaVehiculo(row, campo);
-    if (!fecha) continue;
-    const mes = fecha.slice(0, 7);
-    const actual = porMes.get(mes) ?? { vendido: 0, lote: 0 };
-    const monto = montoVehiculo(row);
-    if (estatusVehiculo(row) === "AVAILABLE") actual.lote += monto;
-    else actual.vendido += monto;
-    porMes.set(mes, actual);
+    if (!fecha || fecha < inicio || fecha > fin) continue;
+    const actual = porDia.get(fecha) ?? vacioDineroBucket();
+    acumularDineroFila(actual, row);
+    porDia.set(fecha, actual);
   }
 
   const puntos: DineroMesPunto[] = [];
-  let mes = inicio.slice(0, 7);
-  const mesFin = fin.slice(0, 7);
-  while (mes <= mesFin) {
-    const valores = porMes.get(mes) ?? { vendido: 0, lote: 0 };
+  for (let offset = 0; offset <= span; offset += 1) {
+    const fecha = addDaysCalendario(inicio, offset);
+    const valores = porDia.get(fecha) ?? vacioDineroBucket();
     puntos.push({
-      mes,
-      label: formatFechaCalendarioGt(`${mes}-01`, {
+      mes: fecha,
+      label: formatFechaCalendarioGt(fecha, {
+        day: "2-digit",
         month: "short",
-        year: "numeric",
       }),
       vendido: valores.vendido,
       lote: valores.lote,
+      vehiculos: valores.vehiculos,
     });
-    mes = addMonthsCalendario(mes, 1);
   }
   return puntos;
 }
@@ -324,18 +425,35 @@ export function totalSemanasMes(mes: string): number {
   return Math.ceil(ultimoDiaMesCalendario(year, month) / 7);
 }
 
+export function etiquetaRangoSemanaCorto(inicio: string, fin: string): string {
+  const parte = (iso: string) => {
+    const [year, month, day] = iso.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    const abbr = new Intl.DateTimeFormat(LOCALE_GT, {
+      weekday: "short",
+      timeZone: TIMEZONE_GT,
+    })
+      .format(date)
+      .replace(/\./g, "")
+      .trim();
+    const cap = abbr.charAt(0).toUpperCase() + abbr.slice(1);
+    return `${cap} ${day}`;
+  };
+  return `${parte(inicio)} - ${parte(fin)}`;
+}
+
 export function opcionesSemanaMes(
   mes: string,
 ): Array<{ value: ReporteriaSemana; label: string }> {
   const total = totalSemanasMes(mes);
   const opciones: Array<{ value: ReporteriaSemana; label: string }> = [
-    { value: "all", label: "Todas las semanas" },
+    { value: "all", label: "Todo el mes" },
   ];
   for (let semana = 1; semana <= total; semana += 1) {
     const { inicio, fin } = rangoSemanaMes(mes, semana);
     opciones.push({
       value: semana,
-      label: `Semana ${semana} (${formatFechaManualGt(inicio)} – ${formatFechaManualGt(fin)})`,
+      label: etiquetaRangoSemanaCorto(inicio, fin),
     });
   }
   return opciones;
@@ -375,6 +493,38 @@ export function resolverRangoCalendario(
     return { inicio: `${filtro.mes}-01`, fin: ultimoDiaMes(filtro.mes) };
   }
   return rangoSemanaMes(filtro.mes, filtro.semana);
+}
+
+export function resolverRangoGraficaCompras(
+  filtro: ReporteriaFiltroCalendario,
+): { inicio: string; fin: string } {
+  if (filtro.vista === "dia") {
+    return { inicio: `${filtro.mes}-01`, fin: ultimoDiaMes(filtro.mes) };
+  }
+  if (filtro.vista === "mes") {
+    const year = filtro.mes.slice(0, 4);
+    return { inicio: `${year}-01-01`, fin: `${year}-12-31` };
+  }
+  return resolverRangoCalendario(filtro);
+}
+
+export function opcionesMesesAnio(
+  mesActual: string,
+): Array<{ value: string; label: string }> {
+  const year = mesActual.slice(0, 4);
+  return MESES_LARGOS.map((label, index) => ({
+    value: `${year}-${pad2(index + 1)}`,
+    label,
+  }));
+}
+
+export function moverAnioFiltroCalendario(
+  filtro: ReporteriaFiltroCalendario,
+  direccion: -1 | 1,
+): ReporteriaFiltroCalendario {
+  const [year, month] = filtro.mes.split("-").map(Number);
+  const mes = `${year + direccion}-${pad2(month)}`;
+  return { ...filtro, mes, semana: "all", dia: `${mes}-01` };
 }
 
 export function etiquetaFiltroCalendario(
@@ -419,7 +569,12 @@ export function cambiarVistaFiltro(
   vista: ReporteriaVista,
 ): ReporteriaFiltroCalendario {
   if (vista === "dia") {
-    return { ...filtro, vista, dia: filtro.dia || `${filtro.mes}-01` };
+    const hoy = fechaCalendarioGt();
+    let dia = filtro.dia;
+    if (!dia || !dia.startsWith(filtro.mes)) {
+      dia = filtro.mes === hoy.slice(0, 7) ? hoy : ultimoDiaMes(filtro.mes);
+    }
+    return { ...filtro, vista, dia };
   }
   if (vista === "rango") {
     return {

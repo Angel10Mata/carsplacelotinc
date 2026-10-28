@@ -1,212 +1,152 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUserContext } from "@/components/(base)/providers/UserProvider";
 import { MorphIconBox } from "@/components/ui/morph-hover-icon";
+import {
+  SigetActionButton,
+} from "@/components/ui/siget-action-button";
 import { APP_MODULES, type AppModuleConfig } from "@/lib/app-modules";
-import { moduleIconColors, moduleMorphIcons, navMorphIcons } from "@/lib/morph-icons";
-import { TCPL_BRAND_RED } from "@/lib/brand-colors";
+import {
+  moduleIconColors,
+  moduleMorphIcons,
+  navMorphIcons,
+  type MorphIconColorSet,
+} from "@/lib/morph-icons";
+import { TCPL_AURORA_COLORS, TCPL_BRAND_RED } from "@/lib/brand-colors";
 import { dashboardInnerClass, dashboardOuterClass } from "@/lib/module-layout";
 
-const DashboardHeader = () => (
-  <div className="mb-4 md:mb-6 w-full px-1 text-left">
-    <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight text-zinc-900 dark:text-zinc-50 leading-[0.95]">
-      Administración
-    </h1>
-  </div>
-);
+const BRAND_GRADIENT = `linear-gradient(135deg, ${[...TCPL_AURORA_COLORS, TCPL_AURORA_COLORS[0]].join(", ")})`;
+
+const BRAND_RED_PALETTE: MorphIconColorSet =
+  moduleIconColors.vehiculos ?? {
+    color: TCPL_BRAND_RED.primary,
+    boxClass:
+      "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/50 dark:to-orange-950/30 border-red-200/90 dark:border-red-800/55 shadow-md ring-1 ring-red-500/10 dark:ring-red-400/10",
+  };
+
+type ModuleTheme = {
+  palette: MorphIconColorSet;
+  rippleColor: string;
+};
+
+function resolveModuleTheme(_moduleId: string): ModuleTheme {
+  return {
+    palette: BRAND_RED_PALETTE,
+    rippleColor: "rgba(255,255,255,0.35)",
+  };
+}
+
+function DashboardHeader() {
+  return (
+    <header className="mb-5 md:mb-7 w-full pl-3 md:pl-0">
+      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-brand dark:text-brand-bright">
+        Panel
+      </p>
+      <h1 className="mt-1 text-2xl font-black uppercase leading-none tracking-tight text-foreground sm:text-3xl md:text-4xl">
+        Administración
+      </h1>
+    </header>
+  );
+}
 
 function ModuleMorphIcon({
   moduleId,
-  size,
+  theme,
   hovered,
 }: {
   moduleId: string;
-  size: number;
+  theme: ModuleTheme;
   hovered?: boolean;
 }) {
   const pair = moduleMorphIcons[moduleId] ?? navMorphIcons.fallback;
-  const palette =
-    moduleIconColors[moduleId] ?? {
-      color: TCPL_BRAND_RED.primary,
-      boxClass:
-        "bg-red-50 dark:bg-red-950/45 border-red-200/90 dark:border-red-800/55",
-    };
-
-  const isLarge = size >= 56;
 
   return (
     <MorphIconBox
       from={pair.from}
       to={pair.to}
-      size={size}
-      color={palette.color}
-      strokeWidth={isLarge ? 2.1 : 1.85}
+      size={48}
+      color={theme.palette.color}
+      strokeWidth={2}
       spring="bouncy"
-      padding={isLarge ? "md" : "sm"}
+      padding="md"
       hovered={hovered}
-      boxClassName={cn(
-        palette.boxClass,
-        "rounded-2xl shrink-0",
-        isLarge && "scale-100 group-hover/card:scale-[1.02] transition-transform duration-300",
-      )}
+      boxClassName={cn(theme.palette.boxClass, "rounded-2xl shrink-0 shadow-sm")}
     />
   );
 }
 
 function DashboardModuleCard({
   mod,
-  index,
   onNavigate,
 }: {
   mod: AppModuleConfig;
-  index: number;
   onNavigate: (href: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
-
-  const iconSize =
-    mod.size === "hero"
-      ? 64
-      : mod.size === "tall"
-        ? 56
-        : mod.size === "wide"
-          ? 48
-          : 40;
-
-  const iconColor = moduleIconColors[mod.id]?.color ?? TCPL_BRAND_RED.primary;
+  const theme = resolveModuleTheme(mod.id);
+  const enterLabel = `Entrar a ${mod.title}`;
 
   return (
-    <motion.div
-      className={cn(
-        "cursor-pointer w-full relative col-span-1 row-span-1 group/card",
-        mod.bento,
-        (mod.size === "hero" || mod.size === "tall") && "min-h-[250px] sm:min-h-0",
-      )}
+    <article
       id={`${mod.id}-card`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.25, delay: index * 0.04, ease: "easeOut" }}
+      className="flex h-full flex-col overflow-hidden rounded-2xl border-2 border-brand/45 bg-zinc-50 shadow-md ring-1 ring-brand/25 dark:border-brand-bright/50 dark:bg-zinc-800/50 dark:shadow-lg dark:ring-brand-bright/30"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
     >
       <div
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onNavigate(mod.href);
-          }
-        }}
-        className={cn(
-          "w-full h-full rounded-2xl overflow-hidden cursor-pointer",
-          "border",
-          mod.cardBorder,
-          "shadow-sm hover:shadow-md dark:shadow-none dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)]",
-          "transition-[box-shadow,border-color,background-color] duration-200",
-          mod.cardBg,
-        )}
-        onClick={() => onNavigate(mod.href)}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
+        className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-white"
+        style={{ backgroundImage: BRAND_GRADIENT }}
       >
-        <span className="absolute top-4 right-4 z-20 hidden sm:inline-flex rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-          {mod.tag}
-        </span>
-        <div
-          className={cn(
-            "w-full h-full flex flex-col relative",
-            mod.size === "compact" || mod.size === "wide" ? "justify-start md:justify-between gap-2 md:gap-0" : "justify-between",
-            mod.size === "hero" || mod.size === "tall" ? "p-6 pb-6 md:p-8 md:pb-8" : "p-4 pb-3 md:p-5 md:pb-5",
-          )}
-        >
-          <div
-            className={cn(
-              "relative z-10 flex flex-row items-center justify-start gap-4 w-full",
-              mod.size === "compact" || mod.size === "wide" ? "md:flex-1" : "flex-1",
-            )}
-          >
-            <ModuleMorphIcon moduleId={mod.id} size={iconSize} hovered={hovered} />
+        {mod.banner}
+      </div>
 
-            <div className="flex-1 min-w-0 flex flex-col justify-start">
-              <h3
-                className="font-black tracking-tighter uppercase leading-none text-zinc-900 dark:text-zinc-100"
-                style={{
-                  fontSize:
-                    mod.size === "hero"
-                      ? "1.875rem"
-                      : mod.size === "tall"
-                        ? "1.5rem"
-                        : mod.size === "wide"
-                          ? "1.25rem"
-                          : "1.125rem",
-                }}
-              >
-                {mod.title}
-                {mod.subtitle ? (
-                  <>
-                    <br />
-                    <span className="text-zinc-800 dark:text-white transition-colors duration-500">
-                      {mod.subtitle}
-                    </span>
-                  </>
-                ) : null}
-              </h3>
+      <div className="flex flex-1 flex-col gap-5 bg-white p-6 dark:bg-zinc-900">
+        <div className="flex items-start gap-4">
+          <ModuleMorphIcon moduleId={mod.id} theme={theme} hovered={hovered} />
 
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-2 leading-tight line-clamp-2">
-                {mod.desc}
-              </p>
-            </div>
-          </div>
-
-          <div
-            className={cn(
-              "relative z-10 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800",
-              mod.size === "compact" || mod.size === "wide" ? "pt-2 md:pt-2.5 md:mt-2" : "pt-2.5 mt-2",
-            )}
-          >
-            <div className="flex items-center justify-between mt-auto">
-              <span
-                className={cn(
-                  "text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors inline-flex items-center gap-1.5",
-                  !hovered && "text-zinc-400 dark:text-zinc-500",
-                )}
-                style={hovered ? { color: iconColor } : undefined}
-              >
-                Entrar al Módulo
-                <MorphIconBox
-                  from={navMorphIcons.arrowUpRight.from}
-                  to={navMorphIcons.arrowUpRight.to}
-                  size={14}
-                  color={iconColor}
-                  strokeWidth={2}
-                  spring="snappy"
-                  padding="xs"
-                  hovered={hovered}
-                  boxClassName="border-0 bg-transparent !scale-100"
-                />
-              </span>
-            </div>
+          <div className="min-w-0 pt-0.5">
+            <h2 className="text-2xl font-black leading-none tracking-tight text-foreground sm:text-[1.65rem]">
+              {mod.title}
+            </h2>
+            <p className="mt-1 text-lg font-semibold leading-tight text-muted-foreground">
+              {mod.subtitle}
+            </p>
           </div>
         </div>
+
+        <p className="text-base font-medium leading-relaxed text-muted-foreground">
+          {mod.desc}
+        </p>
+
+        <div className="mt-auto pt-1">
+          <SigetActionButton
+            label={enterLabel}
+            accentColor="#ffffff"
+            rippleColor={theme.rippleColor}
+            morphFrom={navMorphIcons.chevronRight.from}
+            morphTo={navMorphIcons.chevronRight.to}
+            onClick={() => onNavigate(mod.href)}
+            ariaLabel={enterLabel}
+            style={{ backgroundImage: BRAND_GRADIENT }}
+            className={cn(
+              "h-11 w-full rounded-xl border-0 bg-transparent text-sm font-bold text-white shadow-none hover:opacity-[0.97] dark:bg-transparent",
+              "[&_span_truncate]:overflow-visible [&_span_truncate]:text-clip",
+            )}
+          />
+        </div>
       </div>
-    </motion.div>
+    </article>
   );
 }
 
 function DashboardEmptyModules() {
   return (
-    <div className="w-full rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 bg-white/80 dark:bg-zinc-900/50 p-10 md:p-14 text-center">
+    <div className="w-full rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-10 text-center dark:border-zinc-700 dark:bg-zinc-900/50 md:p-14">
       <p className="text-sm font-bold uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
         Sin módulos de negocio
-      </p>
-      <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
-        Los módulos anteriores fueron retirados. Agrega entradas en{" "}
-        <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">src/lib/app-modules.ts</code>{" "}
-        y crea cada módulo bajo{" "}
-        <code className="text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">src/components/(base)/</code>.
       </p>
     </div>
   );
@@ -227,20 +167,6 @@ export function VerDashboard() {
     return true;
   });
 
-  const handleCardClick = (href: string) => {
-    router.push(href);
-  };
-
-  const AreaLabel = ({ children }: { children: React.ReactNode }) => (
-    <div className="flex items-center justify-center gap-3 w-full px-1 mb-4 md:mb-5">
-      <div className="h-px flex-1 max-w-24 bg-zinc-200 dark:bg-zinc-800" />
-      <span className="text-[10px] font-black uppercase tracking-[0.35em] text-zinc-500 dark:text-zinc-500 shrink-0">
-        {children}
-      </span>
-      <div className="h-px flex-1 max-w-24 bg-zinc-200 dark:bg-zinc-800" />
-    </div>
-  );
-
   return (
     <div className={dashboardOuterClass}>
       <div className={dashboardInnerClass}>
@@ -248,18 +174,14 @@ export function VerDashboard() {
         {visibleModules.length === 0 ? (
           <DashboardEmptyModules />
         ) : (
-          <div className="w-full rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 md:p-6 shadow-sm">
-            <AreaLabel>Negocio</AreaLabel>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 auto-rows-auto sm:auto-rows-[160px]">
-              {visibleModules.map((mod, index) => (
-                <DashboardModuleCard
-                  key={mod.id}
-                  mod={mod}
-                  index={index}
-                  onNavigate={handleCardClick}
-                />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {visibleModules.map((mod) => (
+              <DashboardModuleCard
+                key={mod.id}
+                mod={mod}
+                onNavigate={(href) => router.push(href)}
+              />
+            ))}
           </div>
         )}
       </div>

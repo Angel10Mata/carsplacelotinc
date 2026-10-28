@@ -43,11 +43,21 @@ export const ingresoVehiculoPuntoSchema = z.object({
 
 export type IngresoVehiculoPunto = z.infer<typeof ingresoVehiculoPuntoSchema>;
 
+export const dineroVehiculoLineaSchema = z.object({
+  id: z.string().uuid(),
+  titulo: z.string(),
+  factura: z.string(),
+  monto: z.number(),
+});
+
+export type DineroVehiculoLinea = z.infer<typeof dineroVehiculoLineaSchema>;
+
 export const dineroMesPuntoSchema = z.object({
   mes: z.string(),
   label: z.string(),
   vendido: z.number(),
   lote: z.number(),
+  vehiculos: z.array(dineroVehiculoLineaSchema),
 });
 
 export type DineroMesPunto = z.infer<typeof dineroMesPuntoSchema>;

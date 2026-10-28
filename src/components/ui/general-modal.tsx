@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ban as BanNode, Check as CheckNode, Save, Trash, Trash2, X } from "lucide";
@@ -233,16 +233,19 @@ export function ModalFechaCalendario({
   id,
   required,
   className,
+  inputClassName,
 }: {
   value: string;
   onChange: (value: string) => void;
   id?: string;
   required?: boolean;
   className?: string;
+  inputClassName?: string;
 }) {
   const normalized = normalizarFechaCalendario(value);
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
+  const fieldRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -250,6 +253,24 @@ export function ModalFechaCalendario({
   }, [value]);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 280 });
+
+  const syncPanelPosition = useCallback(() => {
+    const anchor = fieldRef.current;
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const width = Math.round(rect.width);
+    let left = rect.left;
+    const maxLeft = window.innerWidth - width - 8;
+    if (left > maxLeft) left = Math.max(8, maxLeft);
+
+    const panelHeight = panelRef.current?.offsetHeight ?? 320;
+    let top = rect.bottom + 6;
+    if (top + panelHeight > window.innerHeight - 8) {
+      top = Math.max(8, rect.top - panelHeight - 6);
+    }
+
+    setPanelPos({ top, left, width });
+  }, []);
 
   const baseDate = normalized ? fechaDesdeIso(normalized) : new Date();
   const [navMonth, setNavMonth] = useState(baseDate.getMonth());
@@ -263,40 +284,27 @@ export function ModalFechaCalendario({
   }, [normalized]);
 
   useEffect(() => {
-    if (!open || !triggerRef.current) return;
+    if (!open) return;
 
-    const updatePosition = () => {
-      const trigger = triggerRef.current;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      const width = Math.max(rect.width, 288);
-      let left = rect.left;
-      const maxLeft = window.innerWidth - width - 8;
-      if (left > maxLeft) left = Math.max(8, maxLeft);
-
-      const panelHeight = panelRef.current?.offsetHeight ?? 320;
-      let top = rect.bottom + 6;
-      if (top + panelHeight > window.innerHeight - 8) {
-        top = Math.max(8, rect.top - panelHeight - 6);
-      }
-
-      setPanelPos({ top, left, width });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    syncPanelPosition();
+    window.addEventListener("resize", syncPanelPosition);
+    window.addEventListener("scroll", syncPanelPosition, true);
+    const anchor = fieldRef.current;
+    const observer =
+      anchor != null ? new ResizeObserver(() => syncPanelPosition()) : null;
+    if (anchor && observer) observer.observe(anchor);
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", syncPanelPosition);
+      window.removeEventListener("scroll", syncPanelPosition, true);
+      observer?.disconnect();
     };
-  }, [open, navMonth, navYear]);
+  }, [open, navMonth, navYear, syncPanelPosition]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (triggerRef.current?.contains(target)) return;
+      if (fieldRef.current?.contains(target)) return;
       if (panelRef.current?.contains(target)) return;
       setOpen(false);
     };
@@ -463,7 +471,7 @@ export function ModalFechaCalendario({
 
   return (
     <div className={cn("relative w-full", className)}>
-      <div className="relative flex w-full items-center">
+      <div ref={fieldRef} className="relative flex w-full items-center">
         <ModalInput
           id={id}
           type="text"
@@ -474,7 +482,7 @@ export function ModalFechaCalendario({
           onChange={handleManualChange}
           onBlur={handleManualBlur}
           required={required}
-          className="w-full pr-11"
+          className={cn("w-full pr-12", inputClassName)}
         />
         <button
           ref={triggerRef}
@@ -483,7 +491,7 @@ export function ModalFechaCalendario({
           aria-haspopup="dialog"
           aria-label="Abrir calendario"
           onClick={() => setOpen((v) => !v)}
-          className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand transition-colors hover:bg-zinc-100 dark:text-brand-bright dark:hover:bg-zinc-800"
+          className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand transition-colors hover:bg-zinc-100 dark:text-brand-bright dark:hover:bg-zinc-800"
         >
           <Calendar className="size-4" aria-hidden />
         </button>
