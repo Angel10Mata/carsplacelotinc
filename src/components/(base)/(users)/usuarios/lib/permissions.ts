@@ -2,8 +2,12 @@
 export const ROLE_LABELS: Record<string, string> = {
   user: "Usuario (Estándar)",
   admin: "Administrador",
-  super: "Super Admin",
+  super: "Sistemas",
 };
+
+export function labelRol(role: string): string {
+  return ROLE_LABELS[role] ?? role;
+}
 
 export const ROLE_ORDER = ["super", "admin", "user"] as const;
 

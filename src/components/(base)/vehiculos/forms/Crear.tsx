@@ -198,14 +198,10 @@ export default function CrearVehiculoModal({
     }
     if (carImagePaths.length > 0) {
       const folderFromPaths = folderFromCarMediaStoragePath(carImagePaths[0] ?? "");
-      if (folderFromPaths && folderFromPaths !== folderFromMarca) {
-        toast.warn(
-          "Ya hay archivos subidos. Quita las miniaturas antes de cambiar marca/modelo.",
-        );
-        return;
-      }
+      setCarStorageFolderId(folderFromPaths ?? folderFromMarca);
+    } else {
+      setCarStorageFolderId(folderFromMarca);
     }
-    setCarStorageFolderId(folderFromMarca);
     setStep(2);
   };
 

@@ -3,6 +3,7 @@
 // SIMULADOR DE ROL (SUPER)
 
 import { useUserContext } from "@/components/(base)/providers/UserProvider";
+import { labelRol } from "@/components/(base)/(users)/usuarios/lib/permissions";
 
 export function RoleSimulator() {
   const { simulatedRole, setSimulatedRole, realRole } = useUserContext();
@@ -16,10 +17,10 @@ export function RoleSimulator() {
           value={simulatedRole || ""}
           onChange={(e) => setSimulatedRole(e.target.value || null)}
         >
-          <option value="">{realRole}</option>
-          <option value="super">SUPER</option>
-          <option value="admin">ADMIN</option>
-          <option value="user">USER</option>
+          <option value="">{labelRol(realRole)}</option>
+          <option value="super">{labelRol("super")}</option>
+          <option value="admin">{labelRol("admin")}</option>
+          <option value="user">{labelRol("user")}</option>
         </select>
       </div>
       <div className="bg-white/80 dark:bg-background/80 backdrop-blur-md px-1 py-1.5 rounded-l-lg border border-r-0 border-white/20 cursor-pointer transition-opacity duration-300 group-hover:opacity-0 group-hover:pointer-events-none">

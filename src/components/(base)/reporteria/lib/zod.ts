@@ -30,6 +30,7 @@ export const ingresoVehiculoMarcaSchema = z.object({
   id: z.string().uuid(),
   titulo: z.string(),
   factura: z.string(),
+  monto: z.number(),
 });
 
 export type IngresoVehiculoMarca = z.infer<typeof ingresoVehiculoMarcaSchema>;

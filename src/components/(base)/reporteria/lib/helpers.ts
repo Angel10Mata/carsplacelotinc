@@ -105,6 +105,7 @@ export function mapIngresoVehiculoMarca(
     id: row.id,
     titulo: formatMarcaModeloDisplay(row.car_title, row.car_model),
     factura: row.invoice_number,
+    monto: montoVehiculo(row),
   };
 }
 
@@ -418,6 +419,30 @@ export function etiquetaMesLargo(mes: string): string {
   const [year, month] = mes.split("-").map(Number);
   const nombre = MESES_LARGOS[month - 1];
   return nombre ? `${nombre} ${year}` : mes;
+}
+
+export function tituloPeriodoReporteria(clave: string, fallback = ""): string {
+  if (clave.length === 7) return etiquetaMesLargo(clave);
+  if (clave.length === 10) return formatFechaManualGt(clave);
+  return fallback || clave;
+}
+
+function capAbreviaturaEje(value: string): string {
+  const limpio = value.replace(/\./g, "").trim();
+  if (!limpio) return limpio;
+  return limpio.charAt(0).toUpperCase() + limpio.slice(1).toLowerCase();
+}
+
+export function lineasEjeFechaReporteria(label: string): [string, string | null] {
+  const partes = label.replace(/\./g, "").replace(/\s+/g, " ").trim().split(" ");
+  const ultima = partes[partes.length - 1] ?? "";
+  if (partes.length >= 2 && /^\d{4}$/.test(ultima)) {
+    return [capAbreviaturaEje(partes.slice(0, -1).join(" ")).slice(0, 3), ultima.slice(2)];
+  }
+  if (partes.length >= 2 && /^\d{1,2}$/.test(partes[0] ?? "")) {
+    return [partes[0], capAbreviaturaEje(partes.slice(1).join(" "))];
+  }
+  return [label, null];
 }
 
 export function totalSemanasMes(mes: string): number {

@@ -10,7 +10,6 @@ import {
   SigetMobileRecordMetaRow,
   SigetMobileRecordRow,
   sigetMobileRecordMetaIconClass,
-  sigetMobileRecordTitleClass,
 } from "@/components/ui/siget-mobile-record";
 import type { ClienteListRow } from "./lib/zod";
 
@@ -31,7 +30,9 @@ export function ClientesTablaMobileCards({
         <SigetMobileRecordRow key={row.id}>
           <SigetMobileRecordHeader
             title={
-              <p className={`capitalize ${sigetMobileRecordTitleClass}`}>{row.nombre}</p>
+              <p className="capitalize break-words text-base font-bold leading-snug tracking-tight text-foreground">
+                {row.nombre}
+              </p>
             }
             badge={
               <span className="tabular-nums text-sm font-semibold text-muted-foreground">

@@ -16,6 +16,8 @@ export const publicInventoryInvoiceRowSchema = z.object({
   incoterms: z.string().nullable(),
   estado: z.string().nullable(),
   invoiceDate: z.string(),
+  createdAt: z.string().optional().default(""),
+  numeroRegistro: z.number().optional().default(0),
   clienteNombre: z.string().nullable(),
   clienteNit: z.string().nullable(),
   clienteDireccion: z.string().nullable(),

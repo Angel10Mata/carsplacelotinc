@@ -1,10 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Copy, FileText, Images, X } from "lucide-react";
 import { Download as DownloadNode } from "lucide";
-import { ModalLoadingBody, ModalShell, toast } from "@/components/ui/general-modal";
+import { ModalShell, modalAccentClass, toast } from "@/components/ui/general-modal";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { cn } from "@/lib/utils";
 import {
@@ -13,18 +12,9 @@ import {
   type VehiculoInvoiceSource,
 } from "../lib/vehiculo-galeria-items";
 import { vehiculoFacturaPdfFileName } from "../lib/vehiculo-invoice-data";
-import { createGeneratedInvoiceBlobUrl } from "../lib/vehiculo-invoice-pdf-client";
-import { loadReactPdf, prefetchInvoicePdfLibs } from "../lib/vehiculo-react-pdf";
 import { vehiculosTablaAddOutlineButtonClass } from "../lib/tabla-vehiculos-ui";
 import type { VehiculoListRow } from "../lib/zod";
-
-const invoicePdfViewerLoader = () =>
-  import("./CarPdfInlineViewer").then((m) => m.CarPdfInlineViewer);
-
-const CarPdfInlineViewer = dynamic(invoicePdfViewerLoader, {
-  ssr: false,
-  loading: () => <ModalLoadingBody minHeightClass="min-h-[14rem]" />,
-});
+import { VehiculoInvoicePanel } from "./VehiculoInvoicePanel";
 
 const galeriaMediaPanelInvoiceClass =
   "relative flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900";
@@ -37,11 +27,6 @@ const galeriaPhotosMainClass =
 
 const galeriaPhotosThumbRailClass =
   "flex h-24 w-full shrink-0 flex-row gap-2 overflow-x-auto border-t border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950 md:h-full md:w-24 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:border-l md:border-t-0";
-
-function InvoicePdfLoading() {
-  return <ModalLoadingBody minHeightClass="min-h-[14rem]" className="h-full min-h-0" />;
-}
-
 
 function formatInvoiceDateEn(iso: string): string {
   const d = new Date(iso);
@@ -115,28 +100,6 @@ function InvoiceDownloadButton({
   );
 }
 
-function InvoicePanel({
-  invoiceSource,
-  generatedBlobUrl,
-  generatedLoading,
-}: {
-  invoiceSource: VehiculoInvoiceSource;
-  generatedBlobUrl: string | null;
-  generatedLoading: boolean;
-}) {
-  const viewerClassName = "h-full min-h-0 w-full";
-
-  if (invoiceSource.kind === "uploaded-pdf") {
-    return <CarPdfInlineViewer url={invoiceSource.url} className={viewerClassName} />;
-  }
-
-  if (generatedLoading || !generatedBlobUrl) {
-    return <InvoicePdfLoading />;
-  }
-
-  return <CarPdfInlineViewer url={generatedBlobUrl} className={viewerClassName} />;
-}
-
 export function VehiculoGaleriaViewerModal({
   row,
   onClose,
@@ -152,66 +115,11 @@ export function VehiculoGaleriaViewerModal({
     () => (row ? resolveVehiculoInvoiceSource(row) : null),
     [row],
   );
-  const [generatedBlobUrl, setGeneratedBlobUrl] = useState<string | null>(null);
-  const [generatedLoading, setGeneratedLoading] = useState(false);
 
   useEffect(() => {
     setSelected(0);
     setViewMode("photos");
   }, [row?.id]);
-
-  useEffect(() => {
-    if (!row || !invoiceSource) return;
-
-    prefetchInvoicePdfLibs();
-    void loadReactPdf();
-    void invoicePdfViewerLoader();
-
-    let active = true;
-    let prefetchedUrl: string | null = null;
-
-    const clearGeneratedBlob = () => {
-      setGeneratedBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-    };
-
-    if (invoiceSource.kind !== "generated-invoice") {
-      clearGeneratedBlob();
-      setGeneratedLoading(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    clearGeneratedBlob();
-    setGeneratedLoading(true);
-
-    void createGeneratedInvoiceBlobUrl(row)
-      .then((url) => {
-        if (!active) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        prefetchedUrl = url;
-        setGeneratedBlobUrl(url);
-      })
-      .catch((err) => {
-        console.error("prefetch generated invoice:", err);
-        if (active) clearGeneratedBlob();
-      })
-      .finally(() => {
-        if (active) setGeneratedLoading(false);
-      });
-
-    return () => {
-      active = false;
-      if (prefetchedUrl) URL.revokeObjectURL(prefetchedUrl);
-      setGeneratedBlobUrl(null);
-      setGeneratedLoading(false);
-    };
-  }, [row, invoiceSource]);
 
   useEffect(() => {
     if (selected >= photoItems.length) {
@@ -251,59 +159,82 @@ export function VehiculoGaleriaViewerModal({
       headerClassName="hidden"
       contentClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-0 md:p-0"
     >
-      <div className="relative flex shrink-0 flex-col gap-1 border-b border-zinc-200/80 px-4 py-4 pr-12 dark:border-zinc-700 md:px-6">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-3 top-3 flex size-9 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-          aria-label="Cerrar"
-        >
-          <X className="size-5" strokeWidth={2.25} />
-        </button>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {estado ? (
-            <span
-              className={cn(
-                "text-[11px] font-black italic uppercase tracking-wide",
-                estado === "AVAILABLE"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400",
-              )}
-            >
-              {estado}
-            </span>
-          ) : null}
-          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500">
-            {formatInvoiceDateEn(row.invoiceDate)}
-          </span>
-        </div>
-
-        <h2 className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-lg font-black italic uppercase leading-none tracking-tight text-foreground md:text-xl">
-          <span>{titulo}</span>
-          {precio ? (
-            <span className="font-black italic text-foreground">
-              {precio}
-            </span>
-          ) : null}
-        </h2>
-
-        {row.vin ? (
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate font-mono text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              VIN: {row.vin}
-            </span>
+      {viewMode === "photos" ? (
+        <div className="flex shrink-0 flex-col gap-1 border-b border-zinc-200/80 px-4 py-3 dark:border-zinc-700 md:px-6 md:py-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 pt-1.5">
+              {estado ? (
+                <span
+                  className={cn(
+                    "text-[10px] font-black italic uppercase tracking-wide md:text-[11px]",
+                    estado === "AVAILABLE"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400",
+                  )}
+                >
+                  {estado}
+                </span>
+              ) : null}
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400 dark:text-zinc-500 md:text-[11px]">
+                {formatInvoiceDateEn(row.invoiceDate)}
+              </span>
+            </div>
             <button
               type="button"
-              onClick={() => void copyVin()}
-              className="inline-flex cursor-pointer p-0.5 text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200"
-              aria-label="Copiar VIN"
+              onClick={onClose}
+              className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              aria-label="Cerrar"
             >
-              <Copy className="size-3.5" strokeWidth={2.25} />
+              <X className="size-5" strokeWidth={2.25} />
             </button>
           </div>
-        ) : null}
-      </div>
+
+          <h2 className="flex min-w-0 flex-col items-start gap-1 text-sm font-black italic uppercase leading-snug tracking-tight text-foreground md:flex-row md:flex-wrap md:items-baseline md:gap-x-2 md:text-xl md:leading-none">
+            <span className="break-words">{titulo}</span>
+            {precio ? (
+              <span className="font-black italic text-foreground">{precio}</span>
+            ) : null}
+          </h2>
+
+          {row.vin ? (
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 md:text-xs">
+                VIN: {row.vin}
+              </span>
+              <button
+                type="button"
+                onClick={() => void copyVin()}
+                className="inline-flex cursor-pointer p-0.5 text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200"
+                aria-label="Copiar VIN"
+              >
+                <Copy className="size-3.5" strokeWidth={2.25} />
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="relative flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/80 px-4 py-2.5 dark:border-zinc-700 md:px-6">
+          <p
+            className={cn(
+              "min-w-0 truncate text-sm font-black uppercase tracking-tight md:text-base",
+              modalAccentClass,
+            )}
+          >
+            Preview
+          </p>
+          <div className="flex shrink-0 items-center gap-2">
+            <InvoiceDownloadButton row={row} invoiceSource={invoiceSource} />
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              aria-label="Cerrar"
+            >
+              <X className="size-5" strokeWidth={2.25} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-0">
         {viewMode === "photos" ? (
@@ -355,7 +286,7 @@ export function VehiculoGaleriaViewerModal({
                 onClick={() => setViewMode("invoice")}
                 className={cn(
                   vehiculosTablaAddOutlineButtonClass,
-                  "w-[7rem] max-lg:w-full",
+                  "w-auto max-lg:w-auto",
                 )}
               >
                 <FileText className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
@@ -365,27 +296,19 @@ export function VehiculoGaleriaViewerModal({
           </>
         ) : (
           <>
-            <div className="flex min-h-0 w-full flex-1 flex-col gap-3 p-4 md:min-h-0 md:p-6 md:pb-4">
+            <div className="flex min-h-0 w-full flex-1 flex-col p-2 md:min-h-0 md:p-3 md:pb-2">
               <div className={galeriaMediaPanelInvoiceClass}>
-                <InvoicePanel
-                  invoiceSource={invoiceSource}
-                  generatedBlobUrl={generatedBlobUrl}
-                  generatedLoading={generatedLoading}
-                />
+                <VehiculoInvoicePanel invoiceSource={invoiceSource} row={row} />
               </div>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6">
-              <InvoiceDownloadButton
-                row={row}
-                invoiceSource={invoiceSource}
-              />
+            <div className="flex shrink-0 justify-center border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6">
               <button
                 type="button"
                 onClick={() => setViewMode("photos")}
                 className={cn(
                   vehiculosTablaAddOutlineButtonClass,
-                  "w-[7rem] max-lg:w-full",
+                  "w-auto max-lg:w-auto",
                 )}
               >
                 <Images className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />

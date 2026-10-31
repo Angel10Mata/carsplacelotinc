@@ -57,11 +57,14 @@ export async function uploadCarImageStorageAction(formData: FormData) {
   const admin = storageClient();
   const supabase = admin ?? (await createClient());
 
+  const upsert = formData.get("upsert") === "true";
+
   const { error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(pathTrim, file, {
-      upsert: false,
+      upsert,
       contentType: isPdf ? "application/pdf" : "image/jpeg",
+      cacheControl: "0",
     });
 
   if (uploadError) {

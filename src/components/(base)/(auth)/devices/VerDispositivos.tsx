@@ -79,7 +79,7 @@ export async function VerDispositivos() {
         <div className="flex items-center gap-3">
           <ModuleHeaderBackButton />
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">
               Dispositivos
             </h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">

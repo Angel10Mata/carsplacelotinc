@@ -13,7 +13,7 @@ export async function VerAdmin() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
           <ModuleHeaderBackButton />
-          <h1 className="text-3xl font-bold tracking-tighter text-foreground">
+          <h1 className="text-2xl font-bold tracking-tighter text-foreground">
             Administración
           </h1>
         </div>

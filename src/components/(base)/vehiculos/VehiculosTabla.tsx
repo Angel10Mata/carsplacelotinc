@@ -53,6 +53,7 @@ import {
   vehiculosTablaToolbarGridClass,
   vehiculosTablaToolbarSectionClass,
   vehiculosTablaAnchoFactura,
+  vehiculosTablaAnchoCliente,
   vehiculosTablaAnchoFotos,
   vehiculosTablaAnchoMarcaModelo,
   vehiculosTablaAnchoNo,
@@ -66,6 +67,7 @@ import CrearVehiculoModal from "./forms/Crear";
 import EditarVehiculoModal from "./forms/Editar";
 import { VehiculoGaleriaViewerModal } from "./forms/VehiculoGaleriaViewerModal";
 import { useCars } from "./lib/hooks";
+import { sortVehiculosRecientesPrimero } from "./lib/helpers";
 import type { VehiculoListRow } from "./lib/zod";
 
 const cellPad = "px-3 py-3.5";
@@ -139,7 +141,7 @@ export function VehiculosTabla() {
   const [editarCarId, setEditarCarId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    const list = vehiculos ?? [];
+    const list = sortVehiculosRecientesPrimero(vehiculos ?? []);
     const q = search.trim().toLowerCase();
     return list.filter((row) => {
       if (!q) return true;
@@ -195,7 +197,7 @@ export function VehiculosTabla() {
             >
               <div className="relative min-w-0 w-full lg:flex-1">
                 <Search
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                   aria-hidden
                 />
                 <input
@@ -254,13 +256,8 @@ export function VehiculosTabla() {
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)} />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFactura)} />
               <col />
+              <col />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)} />
-              <col
-                style={{
-                  width: vehiculosTablaAnchoMarcaModelo.width,
-                  maxWidth: vehiculosTablaAnchoMarcaModelo.maxWidth,
-                }}
-              />
               <col style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoFotos)} />
               <col style={sigetTablaAnchoAccionesColStyle} />
             </colgroup>
@@ -289,26 +286,27 @@ export function VehiculosTabla() {
                   className={cn(
                     cellPad,
                     vehiculosTablaCellDividerClass,
-                    "min-w-0 whitespace-nowrap text-center",
+                    "min-w-0 text-center",
                   )}
+                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoCliente)}
                 >
                   Cliente
+                </th>
+                <th
+                  className={cn(
+                    cellPad,
+                    vehiculosTablaCellDividerClass,
+                    "min-w-0 text-center",
+                  )}
+                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)}
+                >
+                  Marca / Modelo
                 </th>
                 <th
                   className={cn(cellPad, vehiculosTablaCellDividerClass, "text-center")}
                   style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)}
                 >
                   VIN
-                </th>
-                <th
-                  className={cn(
-                    cellPad,
-                    vehiculosTablaCellDividerClass,
-                    "whitespace-nowrap text-center",
-                  )}
-                  style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)}
-                >
-                  Marca / Modelo
                 </th>
                 <th
                   className={cn(
@@ -340,7 +338,7 @@ export function VehiculosTabla() {
                   </td>
                 </tr>
               ) : (
-                pageItems.map((row, idx) => (
+                pageItems.map((row) => (
                   <tr key={row.id} className={vehiculosTablaBodyRowClass}>
                     <td
                       className={cn(
@@ -350,7 +348,7 @@ export function VehiculosTabla() {
                       )}
                       style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoNo)}
                     >
-                      {rowOffset + idx + 1}
+                      {row.numeroRegistro}
                     </td>
                     <td
                       className={cn(
@@ -367,12 +365,12 @@ export function VehiculosTabla() {
                       className={cn(
                         cellPad,
                         vehiculosTablaCellDividerClass,
-                        "min-w-0 align-middle text-left whitespace-nowrap",
+                        "min-w-0 align-middle text-left break-words whitespace-normal",
                         marcaModeloCell,
                       )}
                     >
                       {row.clienteNombre ? (
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold leading-snug text-foreground">
                           {row.clienteNombre}
                         </span>
                       ) : (
@@ -383,29 +381,28 @@ export function VehiculosTabla() {
                       className={cn(
                         cellPad,
                         vehiculosTablaCellDividerClass,
-                        "whitespace-nowrap text-center align-middle text-sm font-mono uppercase tracking-tight",
+                        "min-w-0 text-left align-middle break-words whitespace-normal",
+                        marcaModeloCell,
                       )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)}
                     >
-                      {row.vin ?? "—"}
+                      <span className="inline-flex max-w-full flex-col items-start leading-snug capitalize">
+                        <span className="break-words font-semibold text-foreground">{row.marca}</span>
+                        {row.modelo !== "—" ? (
+                          <span className="break-words text-base text-muted-foreground">
+                            {row.modelo}
+                          </span>
+                        ) : null}
+                      </span>
                     </td>
                     <td
                       className={cn(
                         cellPad,
                         vehiculosTablaCellDividerClass,
-                        "text-left align-middle",
-                        marcaModeloCell,
+                        "whitespace-nowrap text-center align-middle text-sm font-mono uppercase tracking-tight",
                       )}
-                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoMarcaModelo)}
+                      style={vehiculosTablaColAnchoStyle(vehiculosTablaAnchoVin)}
                     >
-                      <span className="inline-flex max-w-full flex-col items-start leading-snug capitalize">
-                        <span className="break-words font-semibold text-foreground">{row.marca}</span>
-                        {row.modelo !== "—" ? (
-                          <span className="truncate text-base text-muted-foreground">
-                            {row.modelo}
-                          </span>
-                        ) : null}
-                      </span>
+                      {row.vin ?? "—"}
                     </td>
                     <td
                       className={cn(
@@ -449,7 +446,6 @@ export function VehiculosTabla() {
             ) : (
               <VehiculosTablaMobileCards
                 items={pageItems}
-                rowOffset={rowOffset}
                 onVerGaleria={setGaleriaRow}
                 renderAcciones={(row) => (
                   <VehiculoFilaMenu row={row} onEditar={() => setEditarCarId(row.id)} />

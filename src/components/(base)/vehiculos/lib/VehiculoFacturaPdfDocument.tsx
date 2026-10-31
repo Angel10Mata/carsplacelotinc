@@ -118,7 +118,9 @@ export function VehiculoFacturaPdfDocument({
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerSection}>
           <View>
-            <Image src={data.logoSrc} style={styles.logo} />
+            {data.logoSrc ? (
+              <Image src={data.logoSrc} style={styles.logo} />
+            ) : null}
             <View style={styles.companyInfo}>
               <Text>3651 DANBURY ROAD</Text>
               <Text>BREWSTER, NY 10509</Text>

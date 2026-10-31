@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import {
   Area,
   AreaChart,
   CartesianGrid,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -11,7 +13,22 @@ import {
 } from "recharts";
 import { TCPL_BRAND_RED } from "@/lib/brand-colors";
 import { formatFechaManualGt } from "@/lib/fechas-gt";
-import { ReporteriaCard, ReporteriaKpiCard } from "./lib/reporteria-ui";
+import { formatMonedaUsd, tituloPeriodoReporteria } from "./lib/helpers";
+import {
+  ReporteriaCard,
+  ReporteriaChartTooltipFloat,
+  ReporteriaChartTooltipList,
+  ReporteriaChartTooltipShell,
+  ReporteriaKpiCard,
+  reporteriaChartPlotClass,
+  reporteriaChartPlotOuterClass,
+  reporteriaChartTooltipCursorOnlyStyle,
+  ReporteriaChartXTick,
+  ReporteriaVehiculosModal,
+  intervaloEjeReporteria,
+  useReporteriaChartPinnedTooltip,
+  useReporteriaEjeCompacto,
+} from "./lib/reporteria-ui";
 import type { IngresoVehiculoPunto } from "./lib/zod";
 
 type IngresosDotProps = {
@@ -25,7 +42,11 @@ function IngresosDot({
   cy,
   payload,
   diaActivo,
-}: IngresosDotProps & { diaActivo?: string }) {
+  onSelect,
+}: IngresosDotProps & {
+  diaActivo?: string;
+  onSelect?: (punto: IngresoVehiculoPunto) => void;
+}) {
   if (cx == null || cy == null || !payload || payload.ingresos <= 0) {
     return null;
   }
@@ -35,7 +56,14 @@ function IngresosDot({
   const nucleo = activo ? 5.5 : 4.5;
 
   return (
-    <g>
+    <g
+      className="cursor-pointer"
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect?.(payload);
+      }}
+    >
+      <circle cx={cx} cy={cy} r={18} fill="transparent" />
       <circle
         cx={cx}
         cy={cy}
@@ -55,22 +83,45 @@ function IngresosDot({
   );
 }
 
-function IngresosTooltip({
-  active,
+function IngresosActiveDot({
+  cx,
+  cy,
   payload,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload: IngresoVehiculoPunto }>;
+  onSelect,
+}: IngresosDotProps & {
+  onSelect?: (punto: IngresoVehiculoPunto) => void;
 }) {
-  if (!active || !payload?.[0]) return null;
-  const punto = payload[0].payload;
+  if (cx == null || cy == null || !payload) return null;
+
+  return (
+    <g
+      className="cursor-pointer"
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect?.(payload);
+      }}
+    >
+      <circle cx={cx} cy={cy} r={20} fill="transparent" />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={8}
+        fill={TCPL_BRAND_RED.bright}
+        stroke="#ffffff"
+        strokeWidth={2}
+      />
+    </g>
+  );
+}
+
+function IngresosTooltipBody({ punto }: { punto: IngresoVehiculoPunto }) {
   const tituloFecha =
     punto.fecha.length === 10
       ? formatFechaManualGt(punto.fecha)
       : punto.label;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <ReporteriaChartTooltipShell>
       <p className="text-xs font-bold uppercase tracking-widest text-brand dark:text-brand-bright">
         {tituloFecha}
       </p>
@@ -80,20 +131,20 @@ function IngresosTooltip({
           : `${punto.ingresos} compra${punto.ingresos === 1 ? "" : "s"}`}
       </p>
       {punto.vehiculos.length > 0 ? (
-        <ul className="mt-2 space-y-1">
+        <ReporteriaChartTooltipList count={punto.vehiculos.length}>
           {punto.vehiculos.map((vehiculo) => (
             <li
               key={vehiculo.id}
-              className="text-xs font-medium text-muted-foreground"
+              className="break-words text-xs font-medium text-muted-foreground"
             >
-              <span className="font-bold text-foreground">{vehiculo.factura}</span>
+              <span className="font-bold text-foreground">{vehiculo.titulo}</span>
               {" · "}
-              {vehiculo.titulo}
+              {formatMonedaUsd(vehiculo.monto)}
             </li>
           ))}
-        </ul>
+        </ReporteriaChartTooltipList>
       ) : null}
-    </div>
+    </ReporteriaChartTooltipShell>
   );
 }
 
@@ -110,6 +161,24 @@ export function GraficasIngresosVehiculos({
   ultimoFechaLabel,
   diaActivo,
 }: GraficasIngresosVehiculosProps) {
+  const { at, punto, syncFromChart, leaveChart, tooltipHandlers } =
+    useReporteriaChartPinnedTooltip<IngresoVehiculoPunto>();
+  const ejeCompacto = useReporteriaEjeCompacto();
+  const [detalle, setDetalle] = useState<IngresoVehiculoPunto | null>(null);
+
+  const abrirDetalle = (seleccion: IngresoVehiculoPunto | null) => {
+    if (seleccion) setDetalle(seleccion);
+  };
+
+  const tituloDetalle = detalle
+    ? tituloPeriodoReporteria(detalle.fecha, detalle.label)
+    : "";
+  const leadDetalle = detalle
+    ? detalle.ingresos === 0
+      ? "Sin compras"
+      : `${detalle.ingresos} compra${detalle.ingresos === 1 ? "" : "s"}`
+    : "";
+
   return (
     <ReporteriaCard title="Compras de vehículos">
       <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:grid-cols-2 md:px-6">
@@ -117,11 +186,15 @@ export function GraficasIngresosVehiculos({
         <ReporteriaKpiCard label="Última compra" value={ultimoFechaLabel} />
       </div>
 
-      <div className="h-[22rem] w-full px-1 pb-4 md:px-3">
+      <div className={reporteriaChartPlotOuterClass}>
+        <div className={reporteriaChartPlotClass}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={puntos}
-            margin={{ top: 16, right: 18, left: 0, bottom: 8 }}
+            margin={{ top: 28, right: 12, left: 0, bottom: ejeCompacto ? 22 : 8 }}
+            onMouseMove={syncFromChart}
+            onMouseLeave={leaveChart}
+            onClick={() => abrirDetalle(punto)}
           >
             <defs>
               <linearGradient id="ingresosVehiculosFill" x1="0" y1="0" x2="0" y2="1">
@@ -143,13 +216,20 @@ export function GraficasIngresosVehiculos({
               vertical={false}
             />
             <XAxis
-              dataKey="label"
+              dataKey="fecha"
               tickLine={false}
               axisLine={false}
-              interval="preserveStartEnd"
-              minTickGap={18}
-              tick={{ fontSize: 11, fontWeight: 600 }}
-              className="fill-muted-foreground"
+              interval={intervaloEjeReporteria(puntos.length, ejeCompacto)}
+              minTickGap={0}
+              height={ejeCompacto ? 36 : 28}
+              tick={(props) => (
+                <ReporteriaChartXTick
+                  x={props.x}
+                  y={props.y}
+                  label={puntos[props.index]?.label ?? ""}
+                  compact={ejeCompacto}
+                />
+              )}
             />
             <YAxis
               allowDecimals={false}
@@ -161,12 +241,13 @@ export function GraficasIngresosVehiculos({
               className="fill-muted-foreground"
             />
             <Tooltip
+              wrapperStyle={reporteriaChartTooltipCursorOnlyStyle}
               cursor={{
                 stroke: TCPL_BRAND_RED.primary,
                 strokeWidth: 1,
                 strokeDasharray: "4 4",
               }}
-              content={<IngresosTooltip />}
+              content={() => null}
             />
             <Area
               type="linear"
@@ -174,17 +255,54 @@ export function GraficasIngresosVehiculos({
               stroke={TCPL_BRAND_RED.primary}
               strokeWidth={2.5}
               fill="url(#ingresosVehiculosFill)"
-              dot={<IngresosDot diaActivo={diaActivo} />}
-              activeDot={{
-                r: 6,
-                fill: TCPL_BRAND_RED.bright,
-                stroke: "#ffffff",
-                strokeWidth: 2,
-              }}
-            />
+              dot={
+                <IngresosDot diaActivo={diaActivo} onSelect={abrirDetalle} />
+              }
+              activeDot={(props) => (
+                <IngresosActiveDot {...props} onSelect={abrirDetalle} />
+              )}
+            >
+              <LabelList
+                dataKey="ingresos"
+                position="top"
+                content={({ x, y, value, index }) => {
+                  const cantidad = Number(value);
+                  if (!cantidad || x == null || y == null) return null;
+                  const seleccionado =
+                    typeof index === "number" ? puntos[index] : undefined;
+                  return (
+                    <text
+                      x={Number(x)}
+                      y={Number(y) - 10}
+                      textAnchor="middle"
+                      className="fill-foreground cursor-pointer text-[10px] font-bold"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (seleccionado) abrirDetalle(seleccionado);
+                      }}
+                    >
+                      {cantidad}
+                    </text>
+                  );
+                }}
+              />
+            </Area>
           </AreaChart>
         </ResponsiveContainer>
+        {punto ? (
+          <ReporteriaChartTooltipFloat at={at} {...tooltipHandlers}>
+            <IngresosTooltipBody punto={punto} />
+          </ReporteriaChartTooltipFloat>
+        ) : null}
+        </div>
       </div>
+      <ReporteriaVehiculosModal
+        open={detalle !== null}
+        onClose={() => setDetalle(null)}
+        title={tituloDetalle}
+        lead={leadDetalle}
+        vehiculos={detalle?.vehiculos ?? []}
+      />
     </ReporteriaCard>
   );
 }

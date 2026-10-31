@@ -23,12 +23,91 @@ const TILE_CLASS =
 
 const IMAGE_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 const PDF_MIME = "application/pdf";
+const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp"]);
 
-function isAcceptedFile(file: File): boolean {
-  return (
-    IMAGE_MIME.includes(file.type as (typeof IMAGE_MIME)[number]) ||
-    file.type === PDF_MIME
-  );
+function fileExtension(file: File): string {
+  const name = file.name.replace(/^.*[/\\]/, "");
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+}
+
+function isPdfFile(file: File): boolean {
+  return file.type === PDF_MIME || fileExtension(file) === "pdf";
+}
+
+function isImageFile(file: File): boolean {
+  if (file.type === "image/jpg" || file.type === "image/pjpeg") return true;
+  if (IMAGE_MIME.includes(file.type as (typeof IMAGE_MIME)[number])) return true;
+  return IMAGE_EXT.has(fileExtension(file));
+}
+
+async function sniffMediaKind(file: File): Promise<"image" | "pdf" | null> {
+  if (isPdfFile(file)) return "pdf";
+  if (isImageFile(file)) return "image";
+  try {
+    const buf = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+    if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+      return "image";
+    }
+    if (
+      buf.length >= 8 &&
+      buf[0] === 0x89 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x4e &&
+      buf[3] === 0x47
+    ) {
+      return "image";
+    }
+    if (
+      buf.length >= 12 &&
+      buf[0] === 0x52 &&
+      buf[1] === 0x49 &&
+      buf[2] === 0x46 &&
+      buf[3] === 0x46 &&
+      buf[8] === 0x57 &&
+      buf[9] === 0x45 &&
+      buf[10] === 0x42 &&
+      buf[11] === 0x50
+    ) {
+      return "image";
+    }
+    if (
+      buf.length >= 4 &&
+      buf[0] === 0x25 &&
+      buf[1] === 0x50 &&
+      buf[2] === 0x44 &&
+      buf[3] === 0x46
+    ) {
+      return "pdf";
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    const bitmap = await createImageBitmap(file);
+    bitmap.close();
+    return "image";
+  } catch {
+    /* ignore */
+  }
+  const baseName = file.name.replace(/^.*[/\\]/, "").replace(/\.[^.]+$/, "");
+  if (!fileExtension(file) || /^\d+$/.test(baseName)) return "image";
+  return "image";
+}
+
+function fileForImageUpload(file: File): File {
+  if (file.type.startsWith("image/")) return file;
+  const name = fileExtension(file) ? file.name : `${file.name || "photo"}.jpg`;
+  return new File([file], name, {
+    type: "image/jpeg",
+    lastModified: file.lastModified,
+  });
+}
+
+function galleryPublicSrc(path: string, epoch: number): string {
+  const url = carStoragePathToPublicUrl(path);
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}v=${epoch}`;
 }
 
 type VehiculoFotosGaleriaProps = {
@@ -48,6 +127,10 @@ export function VehiculoFotosGaleria({
 }: VehiculoFotosGaleriaProps) {
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [mediaEpoch, setMediaEpoch] = useState(() => Date.now());
+  const [localTiles, setLocalTiles] = useState<
+    { key: string; url: string; isPdf: boolean }[]
+  >([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
   const canAdd = maxPhotos === undefined || paths.length < maxPhotos;
@@ -57,28 +140,81 @@ export function VehiculoFotosGaleria({
     [paths],
   );
 
-  const acceptFile = (file: File) => {
-    if (!canAdd) {
-      toast.warn("Límite de archivos alcanzado.");
-      return;
-    }
+  const acceptFiles = async (files: File[]) => {
     if (!storageFolderId) {
       toast.warn("Aún no hay carpeta de vehículo asignada.");
       return;
     }
-    if (file.type === PDF_MIME) {
-      if (file.size > CAR_PDF_MAX_BYTES) {
-        toast.warn("El PDF no puede superar 10 MB.");
-        return;
+    const classified = await Promise.all(
+      files.map(async (file) => ({ file, kind: await sniffMediaKind(file) })),
+    );
+    const accepted = classified.filter((item) => item.kind !== null);
+    if (accepted.length === 0) {
+      const sample = files[0]?.name?.trim();
+      toast.warn(
+        sample
+          ? `No se pudo usar «${sample}». Usa JPG, PNG, WebP o PDF.`
+          : "Solo JPG, PNG, WebP o PDF (máx. 10 MB).",
+      );
+      return;
+    }
+
+    const slotsLeft =
+      maxPhotos === undefined ? accepted.length : Math.max(0, maxPhotos - paths.length);
+    if (slotsLeft === 0) {
+      toast.warn("Límite de archivos alcanzado.");
+      return;
+    }
+
+    const batch = accepted.slice(0, slotsLeft);
+    if (accepted.length > batch.length) {
+      toast.warn(`Solo se añadirán ${batch.length} archivo${batch.length === 1 ? "" : "s"} (límite alcanzado).`);
+    }
+
+    const previews = batch.map((item, index) => {
+      const isPdf = item.kind === "pdf";
+      return {
+        key: `${item.file.name}-${item.file.lastModified}-${index}`,
+        url: isPdf ? "" : URL.createObjectURL(item.file),
+        isPdf,
+      };
+    });
+    setLocalTiles(previews);
+    setUploading(true);
+    let workingPaths = paths;
+    let added = 0;
+
+    try {
+      for (const item of batch) {
+        const next =
+          item.kind === "pdf"
+            ? await uploadPdfToPaths(item.file, workingPaths, storageFolderId)
+            : item.kind === "image"
+              ? await uploadImageToPaths(
+                  fileForImageUpload(item.file),
+                  workingPaths,
+                  storageFolderId,
+                )
+              : null;
+        if (next) {
+          workingPaths = next;
+          added += 1;
+        }
       }
-      void uploadPdf(file);
-      return;
+      if (added > 0) {
+        onChange(workingPaths);
+        setMediaEpoch(Date.now());
+        if (added > 1) {
+          toast.success(`${added} archivos añadidos.`);
+        }
+      }
+    } finally {
+      previews.forEach((tile) => {
+        if (tile.url.startsWith("blob:")) URL.revokeObjectURL(tile.url);
+      });
+      setLocalTiles([]);
+      setUploading(false);
     }
-    if (IMAGE_MIME.includes(file.type as (typeof IMAGE_MIME)[number])) {
-      void uploadImage(file);
-      return;
-    }
-    toast.warn("Solo JPG, PNG, WebP o PDF (máx. 10 MB).");
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -109,12 +245,7 @@ export function VehiculoFotosGaleria({
     if (!canAdd || uploading || !storageFolderId) return;
     const files = e.dataTransfer.files;
     if (!files?.length) return;
-    const picked = Array.from(files).find(isAcceptedFile);
-    if (!picked) {
-      toast.warn("Solo JPG, PNG, WebP o PDF (máx. 10 MB).");
-      return;
-    }
-    acceptFile(picked);
+    void acceptFiles(Array.from(files));
   };
 
   useEffect(() => {
@@ -122,14 +253,22 @@ export function VehiculoFotosGaleria({
   }, [uploading, onBusyChange]);
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = "";
-    if (!file) return;
-    acceptFile(file);
+    if (files.length === 0) return;
+    void acceptFiles(files);
   };
 
-  const uploadImage = async (sourceFile: File) => {
-    setUploading(true);
+  const handleAddClick = () => {
+    if (uploading || !storageFolderId) return;
+    fileInputRef.current?.click();
+  };
+
+  const uploadImageToPaths = async (
+    sourceFile: File,
+    currentPaths: string[],
+    folderId: string,
+  ): Promise<string[] | null> => {
     try {
       const jpegBlob = await compressCarPhotoForStorage(sourceFile);
       if (jpegBlob.size > CAR_IMAGE_MAX_BYTES) {
@@ -137,16 +276,19 @@ export function VehiculoFotosGaleria({
         toast.error(
           `La foto comprimida sigue siendo grande (${kb} KB). Máximo ${Math.round(CAR_IMAGE_MAX_BYTES / 1024)} KB en cars-images.`,
         );
-        return;
+        return null;
       }
 
-      if (!storageFolderId) return;
-      const newPath = nextCarMediaStoragePath(storageFolderId, paths, "jpg");
+      const newPath = nextCarMediaStoragePath(folderId, currentPaths, "jpg");
       const formData = new FormData();
       formData.append("file", jpegBlob);
       formData.append("path", newPath);
 
-      const result = await uploadCarImageStorageAction(formData);
+      let result = await uploadCarImageStorageAction(formData);
+      if (!result.ok && result.code === "STORAGE_DUPLICATE") {
+        formData.append("upsert", "true");
+        result = await uploadCarImageStorageAction(formData);
+      }
       if (!result.ok) {
         let msg = carStorageErrorMessage(
           result.code,
@@ -157,10 +299,10 @@ export function VehiculoFotosGaleria({
           msg = `${msg} (archivo comprimido: ${kb} KB)`;
         }
         toast.error(msg);
-        return;
+        return null;
       }
 
-      onChange([...paths, result.path]);
+      return [...currentPaths, result.path];
     } catch (err) {
       console.error(err);
       const msg =
@@ -168,21 +310,30 @@ export function VehiculoFotosGaleria({
           ? "No se pudo comprimir la imagen por debajo de 200 KB."
           : "Error al subir la imagen.";
       toast.error(msg);
-    } finally {
-      setUploading(false);
+      return null;
     }
   };
 
-  const uploadPdf = async (sourceFile: File) => {
-    setUploading(true);
+  const uploadPdfToPaths = async (
+    sourceFile: File,
+    currentPaths: string[],
+    folderId: string,
+  ): Promise<string[] | null> => {
+    if (sourceFile.size > CAR_PDF_MAX_BYTES) {
+      toast.warn("El PDF no puede superar 10 MB.");
+      return null;
+    }
     try {
-      if (!storageFolderId) return;
-      const newPath = nextCarMediaStoragePath(storageFolderId, paths, "pdf");
+      const newPath = nextCarMediaStoragePath(folderId, currentPaths, "pdf");
       const formData = new FormData();
       formData.append("file", sourceFile);
       formData.append("path", newPath);
 
-      const result = await uploadCarImageStorageAction(formData);
+      let result = await uploadCarImageStorageAction(formData);
+      if (!result.ok && result.code === "STORAGE_DUPLICATE") {
+        formData.append("upsert", "true");
+        result = await uploadCarImageStorageAction(formData);
+      }
       if (!result.ok) {
         let msg = carStorageErrorMessage(
           result.code,
@@ -197,15 +348,14 @@ export function VehiculoFotosGaleria({
           }
         }
         toast.error(msg);
-        return;
+        return null;
       }
 
-      onChange([...paths, result.path]);
+      return [...currentPaths, result.path];
     } catch (err) {
       console.error(err);
       toast.error("Error al subir el PDF.");
-    } finally {
-      setUploading(false);
+      return null;
     }
   };
 
@@ -218,6 +368,7 @@ export function VehiculoFotosGaleria({
       return;
     }
     onChange(paths.filter((_, i) => i !== index));
+    setMediaEpoch(Date.now());
   };
 
   return (
@@ -225,8 +376,8 @@ export function VehiculoFotosGaleria({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        className="hidden"
+        multiple
+        className="sr-only"
         onChange={handleFileSelected}
       />
       <div
@@ -238,7 +389,7 @@ export function VehiculoFotosGaleria({
       >
         {paths.map((path, index) => {
           const isPdf = isCarPdfStoragePath(path);
-          const publicUrl = carStoragePathToPublicUrl(path);
+          const publicUrl = galleryPublicSrc(path, mediaEpoch);
           return (
             <div
               key={path}
@@ -281,12 +432,38 @@ export function VehiculoFotosGaleria({
             </div>
           );
         })}
+        {localTiles.map((tile, localIndex) => (
+          <div
+            key={tile.key}
+            className={cn(TILE_CLASS, "bg-zinc-100 dark:bg-zinc-800")}
+          >
+            {tile.isPdf ? (
+              <div className="flex size-full flex-col items-center justify-center gap-1.5 p-2 text-brand dark:text-brand-bright">
+                <FileText className="size-10 shrink-0" strokeWidth={1.75} />
+                <span className="text-[10px] font-black uppercase tracking-wide">
+                  PDF
+                </span>
+              </div>
+            ) : (
+              <img src={tile.url} alt="" className="size-full object-cover" />
+            )}
+            {principalImageIndex < 0 &&
+            localIndex === localTiles.findIndex((item) => !item.isPdf) ? (
+              <span className="pointer-events-none absolute bottom-1.5 left-1.5 rounded-md bg-black/55 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+                Principal
+              </span>
+            ) : null}
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
+              <Loader2 size={22} className="animate-spin text-white" />
+            </span>
+          </div>
+        ))}
 
         {canAdd ? (
           <button
             type="button"
             disabled={uploading || !storageFolderId}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleAddClick}
             className={cn(
               TILE_CLASS,
               "flex flex-col items-center justify-center gap-1.5 border-2 border-dashed border-brand/25 bg-brand/5 text-brand transition-colors hover:border-brand/40 hover:bg-brand/10 disabled:opacity-60 dark:border-brand-bright/30 dark:bg-brand-bright/5 dark:text-brand-bright dark:hover:bg-brand-bright/10",

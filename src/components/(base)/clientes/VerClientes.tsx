@@ -8,13 +8,13 @@ export function VerClientes() {
     <div
       className={cn(
         modulePageShellClass,
-        "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0",
+        "min-h-0 gap-2 pt-0 pb-0 md:pt-0 md:pb-8 mt-0 md:mt-4",
       )}
     >
-      <header className="mb-4 md:mb-5">
+      <header className="mb-0">
         <div className="flex items-center gap-3 pl-3 md:pl-0">
-          <ModuleHeaderBackButton size="sm" className="translate-y-1" />
-          <h1 className="min-w-0 translate-y-1 text-2xl font-black uppercase leading-none tracking-tight text-foreground sm:text-3xl md:text-4xl">
+          <ModuleHeaderBackButton size="sm" />
+          <h1 className="min-w-0 text-xl font-black uppercase leading-none tracking-tight text-foreground sm:text-2xl md:text-3xl">
             Gestión de clientes
           </h1>
         </div>

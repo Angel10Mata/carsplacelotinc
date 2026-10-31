@@ -13,7 +13,6 @@ import {
   buildIngresosVehiculosSerie,
   filasEnPeriodo,
   filtroCalendarioInicial,
-  resolverRangoCalendario,
   resolverRangoGraficaCompras,
   resumenDineroVehiculos,
   resumenIngresosVehiculos,
@@ -24,7 +23,7 @@ import type { ReporteriaCampoFecha, ReporteriaFiltroCalendario } from "./lib/zod
 export function VerReporteria() {
   const [mounted, setMounted] = useState(false);
   const [filtro, setFiltro] = useState<ReporteriaFiltroCalendario | null>(null);
-  const [campo, setCampo] = useState<ReporteriaCampoFecha>("registro");
+  const [campo, setCampo] = useState<ReporteriaCampoFecha>("factura");
   const { data = [], isPending, isError } = useReporteriaVehiculos();
 
   useEffect(() => {
@@ -32,22 +31,9 @@ export function VerReporteria() {
     setMounted(true);
   }, []);
 
-  const rango = useMemo(
-    () => (mounted && filtro ? resolverRangoCalendario(filtro) : null),
-    [filtro, mounted],
-  );
-
   const rangoGrafica = useMemo(
     () => (mounted && filtro ? resolverRangoGraficaCompras(filtro) : null),
     [filtro, mounted],
-  );
-
-  const filas = useMemo(
-    () =>
-      mounted && rango
-        ? filasEnPeriodo(data, campo, rango.inicio, rango.fin)
-        : [],
-    [campo, data, mounted, rango],
   );
 
   const filasGrafica = useMemo(
@@ -59,30 +45,24 @@ export function VerReporteria() {
   );
 
   const ingresos = useMemo(() => {
-    if (!rango || !rangoGrafica) {
+    if (!rangoGrafica) {
       return {
         puntos: [],
         vehiculos: 0,
         ultimoFechaLabel: "—",
       };
     }
-    const puntosKpi = buildIngresosVehiculosSerie(
-      filas,
-      campo,
-      rango.inicio,
-      rango.fin,
-    );
     const puntos = buildIngresosVehiculosSerie(
       filasGrafica,
       campo,
       rangoGrafica.inicio,
       rangoGrafica.fin,
     );
-    return { puntos, ...resumenIngresosVehiculos(puntosKpi) };
-  }, [campo, filas, filasGrafica, rango, rangoGrafica]);
+    return { puntos, ...resumenIngresosVehiculos(puntos) };
+  }, [campo, filasGrafica, rangoGrafica]);
 
   const dinero = useMemo(() => {
-    if (!rango || !rangoGrafica) {
+    if (!rangoGrafica) {
       return {
         puntos: [],
         vendido: 0,
@@ -98,21 +78,21 @@ export function VerReporteria() {
         rangoGrafica.inicio,
         rangoGrafica.fin,
       ),
-      ...resumenDineroVehiculos(filas),
+      ...resumenDineroVehiculos(filasGrafica),
     };
-  }, [campo, filas, filasGrafica, rango, rangoGrafica]);
+  }, [campo, filasGrafica, rangoGrafica]);
 
   return (
     <div
       className={cn(
         modulePageShellClass,
-        "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0",
+        "min-h-0 gap-2 pt-0 pb-0 md:pt-0 md:pb-8 mt-0 md:mt-4",
       )}
     >
-      <header className="mb-4 md:mb-5">
+      <header className="mb-0">
         <div className="flex items-center gap-3 pl-3 md:pl-0">
-          <ModuleHeaderBackButton size="sm" className="translate-y-1" />
-          <h1 className="min-w-0 translate-y-1 text-2xl font-black uppercase leading-none tracking-tight text-foreground sm:text-3xl md:text-4xl">
+          <ModuleHeaderBackButton size="sm" />
+          <h1 className="min-w-0 text-xl font-black uppercase leading-none tracking-tight text-foreground sm:text-2xl md:text-3xl">
             Reportería
           </h1>
         </div>

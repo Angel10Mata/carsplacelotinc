@@ -77,20 +77,35 @@ export function SigetMobileRecordMetaRow({
   icon,
   children,
   subtext,
+  trailing,
   className,
 }: {
   icon?: ReactNode;
   children: ReactNode;
   subtext?: ReactNode;
+  trailing?: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-start gap-2.5 text-base text-muted-foreground", className)}>
-      {icon ? <span className="mt-0.5 shrink-0">{icon}</span> : null}
-      <div className="min-w-0">
-        <div className="text-foreground">{children}</div>
-        {subtext ? <div className="text-sm text-muted-foreground">{subtext}</div> : null}
+    <div
+      className={cn(
+        "flex gap-2.5 text-base text-muted-foreground",
+        trailing ? "items-center justify-between" : "items-start",
+        className,
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-2.5">
+        {icon ? <span className="mt-0.5 shrink-0">{icon}</span> : null}
+        <div className="min-w-0">
+          <div className="text-foreground">{children}</div>
+          {subtext ? <div className="text-sm text-muted-foreground">{subtext}</div> : null}
+        </div>
       </div>
+      {trailing ? (
+        <div className="flex shrink-0 items-center justify-end gap-1.5">
+          {trailing}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -36,7 +36,7 @@ export async function listCarsAction() {
     const { data, error } = await supabase
       .from("cars")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("listCars:", error.message);

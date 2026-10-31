@@ -26,6 +26,7 @@ import {
 } from "@/lib/morph-icons";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
+import { labelRol } from "@/components/(base)/(users)/usuarios/lib/permissions";
 
 // TIPOS
 
@@ -228,7 +229,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                       Rol
                     </p>
                     <p className="font-bold leading-tight text-brand dark:text-brand-bright uppercase truncate">
-                      {effectiveRole}
+                      {labelRol(effectiveRole)}
                     </p>
                   </div>
                   <div className="col-span-2 min-w-0 border-t border-border/40 pt-3">
@@ -695,7 +696,7 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                         <Shield className="size-5 text-amber-700 dark:text-amber-400" />
                       </span>
                       <span className="text-sm font-bold text-foreground uppercase">
-                        Rol Real: {realRole.toUpperCase()}
+                        Rol Real: {labelRol(realRole)}
                       </span>
                     </div>
                     <MenuAccordionChevron open={roleOpen} />
@@ -710,10 +711,10 @@ export default function Menu({ isOpen, setIsOpen, user }: MenuProps) {
                         className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-foreground outline-none cursor-pointer dark:border-zinc-700 dark:bg-zinc-900"
                       >
                         <option value="">
-                          Sin simulación ({realRole.toUpperCase()})
+                          Sin simulación ({labelRol(realRole)})
                         </option>
-                        <option value="admin">Simular: ADMIN</option>
-                        <option value="user">Simular: USER</option>
+                        <option value="admin">Simular: {labelRol("admin")}</option>
+                        <option value="user">Simular: {labelRol("user")}</option>
                       </select>
                     </div>
                   )}

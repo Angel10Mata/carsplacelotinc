@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { mapCarToListRow } from "./helpers";
+import { mapCarToListRow, enrichVehiculoListRows } from "./helpers";
 import {
   actualizarCarAction,
   crearCarAction,
@@ -26,8 +26,8 @@ export function useCars() {
     queryFn: async () => {
       const res = await listCarsAction();
       if (!res.ok) throw new Error(res.code);
-      return res.data.map(({ car, customer }) =>
-        mapCarToListRow(car, customer),
+      return enrichVehiculoListRows(
+        res.data.map(({ car, customer }) => mapCarToListRow(car, customer)),
       );
     },
   });

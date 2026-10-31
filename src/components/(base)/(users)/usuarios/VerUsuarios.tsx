@@ -12,6 +12,7 @@ import SignUp from "@/components/(base)/(auth)/signup/SignUp";
 import { modulePageScrollClass } from "@/lib/module-layout";
 import { ModuleHeaderBackButton } from "@/components/(base)/layout/ModuleHeaderBackButton";
 import {
+  moduleTableAccentBarClass,
   moduleTableBodyClass,
   moduleTableCellClass,
   moduleTableClass,
@@ -130,43 +131,44 @@ export function VerUsuarios() {
   return (
     <>
       <div className={modulePageScrollClass}>
-        <div className="flex flex-col gap-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <ModuleHeaderBackButton size="sm" />
-              <div>
-              <h2 className="text-sm xl:text-xl font-bold tracking-tight text-foreground">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <ModuleHeaderBackButton size="sm" />
+            <div className="min-w-0">
+              <h2 className="min-w-0 text-xl font-black uppercase leading-none tracking-tight text-foreground sm:text-2xl md:text-3xl">
                 Gestión de Usuarios
               </h2>
-              <p className="text-xs">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Rol Actual:{" "}
-                <span className="text-[10px] underline font-bold uppercase">
+                <span className="text-[10px] font-bold uppercase underline">
                   {roleLabels[effectiveRole] || effectiveRole}
                 </span>
                 {realRole !== effectiveRole && (
-                  <span className="text-[10px] text-muted-foreground ml-1">
+                  <span className="ml-1 text-[10px] text-muted-foreground">
                     (simulación)
                   </span>
                 )}
               </p>
-              </div>
             </div>
-            {canCreateUser && !isSignUpOpen && (
-              <SigetActionButton
-                label="Crear usuario"
-                accentColor={sigetAccent.crear}
-                morphFrom={UserPlus}
-                morphTo={Check}
-                onClick={() => setIsSignUpOpen(true)}
-                ariaLabel="Crear usuario en la base de datos"
-                className="w-auto shrink-0"
-              />
-            )}
           </div>
+          {canCreateUser && !isSignUpOpen && (
+            <SigetActionButton
+              label="Crear"
+              accentColor={sigetAccent.crear}
+              morphFrom={UserPlus}
+              morphTo={Check}
+              onClick={() => setIsSignUpOpen(true)}
+              ariaLabel="Crear usuario en la base de datos"
+              className="w-auto shrink-0"
+            />
+          )}
+        </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className={cn(moduleTableShellClass, "p-0")}>
+          <div className={moduleTableAccentBarClass} aria-hidden />
+          <div className="px-5 py-5">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Buscar por nombre..."
@@ -175,15 +177,10 @@ export function VerUsuarios() {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className={cn(moduleTableSearchClass, "pl-10 h-9")}
+                className={moduleTableSearchClass}
               />
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-            </div>
           </div>
-        </div>
-
-        <div className={moduleTableShellClass}>
           <div className={cn(moduleTableScrollClass, "min-h-0 overflow-auto")}>
             <table className={moduleTableClass}>
             <thead>

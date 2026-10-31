@@ -18,6 +18,7 @@ import { updateProfile } from "./lib/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import { ModalLoadingBody } from "@/components/ui/general-modal";
 import { cn } from "@/lib/utils";
+import { ROLE_LABELS } from "@/components/(base)/(users)/usuarios/lib/permissions";
 
 // Props
 interface VerPerfilProps {
@@ -54,11 +55,7 @@ export default function VerPerfil({ isOpen, onClose, userId }: VerPerfilProps) {
     };
   }, [isOpen]);
 
-  const roleLabels: Record<string, string> = {
-    user: "Usuario (Estándar)",
-    admin: "Administrador",
-    super: "Super Admin",
-  };
+  const roleLabels = ROLE_LABELS;
 
   let roleOptions: string[] = [];
   if (sessionRole === "super") {

@@ -54,15 +54,15 @@ export function VerDetalleCliente({ customerId }: VerDetalleClienteProps) {
           if (!next) setEditarCarId(null);
         }}
       />
-      <div className={cn(modulePageShellClass, "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0")}>
-        <div className="mb-4 flex flex-col gap-1">
-          <div className="flex items-center gap-3">
-            <ModuleHeaderBackButton />
-            <h1 className="text-lg font-black uppercase tracking-tight text-foreground md:text-xl">
+      <div className={cn(modulePageShellClass, "min-h-0 gap-2 pt-0 pb-0 md:pt-0 md:pb-8 mt-0 md:mt-4")}>
+        <header className="mb-0">
+          <div className="flex items-center gap-3 pl-3 md:pl-0">
+            <ModuleHeaderBackButton size="sm" />
+            <h1 className="min-w-0 text-xl font-black uppercase leading-none tracking-tight text-foreground sm:text-2xl md:text-3xl">
               Detalles del cliente
             </h1>
           </div>
-        </div>
+        </header>
 
         {clienteLoading ? <ModuleDataLoadingPanel minHeightClass="min-h-[16rem]" /> : null}
 
@@ -84,14 +84,14 @@ export function VerDetalleCliente({ customerId }: VerDetalleClienteProps) {
                 <h2 className="text-lg font-black uppercase leading-tight tracking-tight text-foreground md:text-xl">
                   {cliente.nombre}
                 </h2>
-                <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-base">
+                <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-base md:gap-y-1">
                   <div className="flex shrink-0 flex-wrap items-baseline gap-x-2">
                     <DetalleLabel>NIT</DetalleLabel>
                     <dd className="m-0 font-mono tabular-nums text-foreground">
                       {cliente.nit?.trim() || "—"}
                     </dd>
                   </div>
-                  <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
+                  <div className="flex min-w-0 w-full flex-wrap items-baseline gap-x-2 md:w-auto md:flex-1">
                     <DetalleLabel>Dirección</DetalleLabel>
                     <dd className="m-0 min-w-0 leading-snug text-muted-foreground">
                       {cliente.direccion?.trim() || "—"}

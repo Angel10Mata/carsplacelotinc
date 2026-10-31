@@ -5,7 +5,11 @@ import { APP_BASE_PATH } from "@/lib/app-config";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { carRowSchema } from "@/components/(base)/vehiculos/lib/zod";
-import { mapCarToListRow } from "@/components/(base)/vehiculos/lib/helpers";
+import {
+  buildNumeroRegistroPorId,
+  mapCarToListRow,
+  sortVehiculosRecientesPrimero,
+} from "@/components/(base)/vehiculos/lib/helpers";
 import { mapCustomerToListRow } from "./helpers";
 import {
   actualizarCustomerSchema,
@@ -223,19 +227,43 @@ export async function listCarsByCustomerAction(rawCustomerId: unknown) {
       .from("cars")
       .select("*")
       .eq("customer_id", parsedId.data)
-      .order("invoice_number", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("listCarsByCustomer:", error.message);
       return { ok: false as const, code: "DB_ERROR" };
     }
 
+    const { data: registroMeta, error: registroError } = await supabase
+      .from("cars")
+      .select("id, created_at");
+
+    if (registroError) {
+      console.error("listCarsByCustomer registro:", registroError.message);
+      return { ok: false as const, code: "DB_ERROR" };
+    }
+
+    const numeroPorId = buildNumeroRegistroPorId(
+      (registroMeta ?? [])
+        .filter(
+          (row): row is { id: string; created_at: string } =>
+            typeof row.id === "string" && typeof row.created_at === "string",
+        )
+        .map((row) => ({ id: row.id, createdAt: row.created_at })),
+    );
+
     const items = (data ?? [])
       .map((row) => carRowSchema.safeParse(row))
       .filter((r) => r.success)
-      .map((r) => mapCarToListRow(r.data, customer));
+      .map((r) => {
+        const mapped = mapCarToListRow(r.data, customer);
+        return {
+          ...mapped,
+          numeroRegistro: numeroPorId.get(mapped.id) ?? 0,
+        };
+      });
 
-    return { ok: true as const, data: items };
+    return { ok: true as const, data: sortVehiculosRecientesPrimero(items) };
   } catch {
     return { ok: false as const, code: "UNKNOWN" };
   }

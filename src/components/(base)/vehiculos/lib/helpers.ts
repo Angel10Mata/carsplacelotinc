@@ -67,6 +67,40 @@ export function parseMarcaModeloInput(value: string): {
   return { car_title: trimmed };
 }
 
+function compareRegistroVehiculo(
+  a: Pick<VehiculoListRow, "id" | "createdAt">,
+  b: Pick<VehiculoListRow, "id" | "createdAt">,
+): number {
+  const byDate = a.createdAt.localeCompare(b.createdAt);
+  if (byDate !== 0) return byDate;
+  return a.id.localeCompare(b.id);
+}
+
+export function buildNumeroRegistroPorId(
+  rows: Pick<VehiculoListRow, "id" | "createdAt">[],
+): Map<string, number> {
+  const ordered = [...rows].sort(compareRegistroVehiculo);
+  return new Map(ordered.map((row, index) => [row.id, index + 1]));
+}
+
+export function enrichVehiculoListRows(rows: VehiculoListRow[]): VehiculoListRow[] {
+  const numeroPorId = buildNumeroRegistroPorId(rows);
+  return rows.map((row) => ({
+    ...row,
+    numeroRegistro: numeroPorId.get(row.id) ?? 0,
+  }));
+}
+
+export function sortVehiculosRecientesPrimero(
+  rows: VehiculoListRow[],
+): VehiculoListRow[] {
+  return [...rows].sort((a, b) => {
+    const byDate = b.createdAt.localeCompare(a.createdAt);
+    if (byDate !== 0) return byDate;
+    return b.id.localeCompare(a.id);
+  });
+}
+
 export function mapCarToListRow(
   row: CarRow,
   customer?: CustomerRow | null,
@@ -94,6 +128,8 @@ export function mapCarToListRow(
     incoterms: row.incoterms,
     estado: row.car_status,
     invoiceDate: row.invoice_date,
+    createdAt: row.created_at,
+    numeroRegistro: 0,
     clienteNombre: customer?.customer_name?.trim() || null,
     clienteNit: customer?.customer_nit?.trim() || null,
     clienteDireccion: customer?.customer_address?.trim() || null,

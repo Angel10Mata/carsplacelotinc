@@ -1,7 +1,7 @@
 import { TCPL_AURORA_COLORS } from "@/lib/brand-colors";
 
-export const APP_NAME = "Cars Place Lot";
-export const APP_NAME_UPPER = "CARS PLACE LOT";
+export const APP_NAME = "The Cars Place Lot Inc";
+export const APP_NAME_UPPER = "THE CARS PLACE LOT INC";
 export const APP_LOGO_OVERLAY_TAGLINE = "The Cars Place Lot Inc";
 export const APP_BASE_PATH = "/TheCarsPlace";
 export const PUBLIC_CATALOG_PATH = "/inventario";

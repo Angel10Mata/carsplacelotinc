@@ -153,6 +153,12 @@
     background-size: 24px 24px;
     background-attachment: fixed;
   }
+
+  html[data-modal-open],
+  html[data-modal-open] body {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
   
   /* Evitar zoom automático en dispositivos móviles (iOS Safari / Chromium) */
   input, 

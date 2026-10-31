@@ -1,33 +1,42 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { TCPL_BRAND_RED } from "@/lib/brand-colors";
-import { formatMonedaUsd } from "./lib/helpers";
-import { ReporteriaCard, ReporteriaKpiCard } from "./lib/reporteria-ui";
+import { formatMonedaUsd, tituloPeriodoReporteria } from "./lib/helpers";
+import {
+  ReporteriaCard,
+  ReporteriaChartTooltipFloat,
+  ReporteriaChartTooltipList,
+  ReporteriaChartTooltipShell,
+  ReporteriaKpiCard,
+  formatMontoCompactoUsd,
+  reporteriaChartPlotClass,
+  reporteriaChartPlotOuterClass,
+  reporteriaChartTooltipCursorOnlyStyle,
+  reporteriaPuntoDesdeClick,
+  ReporteriaChartXTick,
+  ReporteriaVehiculosModal,
+  intervaloEjeReporteria,
+  useReporteriaChartPinnedTooltip,
+  useReporteriaEjeCompacto,
+} from "./lib/reporteria-ui";
 import type { DineroMesPunto } from "./lib/zod";
 
 const COLOR_COMPRA_SALIDA = TCPL_BRAND_RED.primary;
 
-function DineroTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload: DineroMesPunto }>;
-}) {
-  if (!active || !payload?.[0]) return null;
-  const punto = payload[0].payload;
-
+function DineroTooltipBody({ punto }: { punto: DineroMesPunto }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+    <ReporteriaChartTooltipShell>
       <p className="text-xs font-bold uppercase tracking-widest text-brand dark:text-brand-bright">
         {punto.label}
       </p>
@@ -37,22 +46,20 @@ function DineroTooltip({
           : `Compra de: ${formatMonedaUsd(punto.vendido)}`}
       </p>
       {punto.vehiculos.length > 0 ? (
-        <ul className="mt-2 space-y-1">
+        <ReporteriaChartTooltipList count={punto.vehiculos.length}>
           {punto.vehiculos.map((vehiculo) => (
             <li
               key={vehiculo.id}
-              className="text-xs font-medium text-muted-foreground"
+              className="break-words text-xs font-medium text-muted-foreground"
             >
-              <span className="font-bold text-foreground">{vehiculo.factura}</span>
-              {" · "}
-              {vehiculo.titulo}
+              <span className="font-bold text-foreground">{vehiculo.titulo}</span>
               {" · "}
               {formatMonedaUsd(vehiculo.monto)}
             </li>
           ))}
-        </ul>
+        </ReporteriaChartTooltipList>
       ) : null}
-    </div>
+    </ReporteriaChartTooltipShell>
   );
 }
 
@@ -67,6 +74,15 @@ export function GraficasDineroVehiculos({
   vendido,
   unidadesVendidas,
 }: GraficasDineroVehiculosProps) {
+  const { at, punto, syncFromChart, leaveChart, tooltipHandlers } =
+    useReporteriaChartPinnedTooltip<DineroMesPunto>();
+  const ejeCompacto = useReporteriaEjeCompacto();
+  const [detalle, setDetalle] = useState<DineroMesPunto | null>(null);
+
+  const abrirDetalle = (seleccion: DineroMesPunto | null) => {
+    if (seleccion) setDetalle(seleccion);
+  };
+
   return (
     <ReporteriaCard title="Montos de compra">
       <div className="px-4 py-4 md:px-6">
@@ -76,11 +92,14 @@ export function GraficasDineroVehiculos({
         />
       </div>
 
-      <div className="h-[22rem] w-full px-1 pb-4 md:px-3">
+      <div className={reporteriaChartPlotOuterClass}>
+        <div className={reporteriaChartPlotClass}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={puntos}
-            margin={{ top: 16, right: 18, left: 8, bottom: 8 }}
+            margin={{ top: 28, right: 10, left: 4, bottom: ejeCompacto ? 22 : 8 }}
+            onMouseMove={syncFromChart}
+            onMouseLeave={leaveChart}
           >
             <CartesianGrid
               strokeDasharray="4 6"
@@ -88,11 +107,20 @@ export function GraficasDineroVehiculos({
               vertical={false}
             />
             <XAxis
-              dataKey="label"
+              dataKey="mes"
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11, fontWeight: 600 }}
-              className="fill-muted-foreground"
+              interval={intervaloEjeReporteria(puntos.length, ejeCompacto)}
+              minTickGap={0}
+              height={ejeCompacto ? 36 : 28}
+              tick={(props) => (
+                <ReporteriaChartXTick
+                  x={props.x}
+                  y={props.y}
+                  label={puntos[props.index]?.label ?? ""}
+                  compact={ejeCompacto}
+                />
+              )}
             />
             <YAxis
               tickLine={false}
@@ -110,17 +138,60 @@ export function GraficasDineroVehiculos({
               className="fill-muted-foreground"
             />
             <Tooltip
+              wrapperStyle={reporteriaChartTooltipCursorOnlyStyle}
               cursor={{ fill: "rgb(24 24 27 / 0.06)" }}
-              content={<DineroTooltip />}
+              content={() => null}
             />
             <Bar
               dataKey="vendido"
               fill={COLOR_COMPRA_SALIDA}
               radius={[8, 8, 0, 0]}
-            />
+              className="cursor-pointer"
+              onClick={(data, index) =>
+                abrirDetalle(reporteriaPuntoDesdeClick(data, index, puntos))
+              }
+            >
+              <LabelList
+                dataKey="vendido"
+                position="top"
+                content={({ x, y, width, value }) => {
+                  const monto = Number(value);
+                  if (!monto || x == null || y == null || width == null) return null;
+                  return (
+                    <text
+                      x={Number(x) + Number(width) / 2}
+                      y={Number(y) - 6}
+                      textAnchor="middle"
+                      className="fill-foreground text-[10px] font-bold"
+                    >
+                      {formatMontoCompactoUsd(monto)}
+                    </text>
+                  );
+                }}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
+        {punto ? (
+          <ReporteriaChartTooltipFloat at={at} {...tooltipHandlers}>
+            <DineroTooltipBody punto={punto} />
+          </ReporteriaChartTooltipFloat>
+        ) : null}
+        </div>
       </div>
+      <ReporteriaVehiculosModal
+        open={detalle !== null}
+        onClose={() => setDetalle(null)}
+        title={detalle ? tituloPeriodoReporteria(detalle.mes, detalle.label) : ""}
+        lead={
+          detalle
+            ? detalle.vendido <= 0
+              ? "Sin compras"
+              : `Compra de: ${formatMonedaUsd(detalle.vendido)}`
+            : ""
+        }
+        vehiculos={detalle?.vehiculos ?? []}
+      />
     </ReporteriaCard>
   );
 }

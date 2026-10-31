@@ -50,13 +50,13 @@ export function ModuleTableFooter({
 export const moduleTableAccentBarClass = "h-1 w-full shrink-0 bg-brand";
 
 export const moduleTableShellClass =
-  "flex flex-col flex-1 min-w-0 overflow-hidden rounded-2xl border border-border bg-card dark:border-zinc-700 dark:bg-zinc-900/40 p-5 shadow-sm";
+  "flex flex-col flex-1 min-w-0 overflow-hidden rounded-2xl border border-border bg-white dark:border-zinc-700 dark:bg-zinc-900 p-5 shadow-none";
 
 export const moduleTableToolbarClass =
   "flex flex-col xl:flex-row gap-4 mb-4 justify-between items-start";
 
 export const moduleTableSearchClass =
-  "w-full pl-9 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-sm text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#8DA78E]/40 transition-all";
+  "h-12 w-full rounded-full border border-brand/30 bg-white pl-11 pr-4 text-sm text-foreground outline-none shadow-none placeholder:text-muted-foreground focus:border-brand focus:ring-2 focus:ring-brand/15 dark:border-brand-bright/35 dark:bg-zinc-900 dark:text-white dark:focus:border-brand-bright";
 
 export const moduleTableScrollClass =
   "flex-1 overflow-y-auto custom-scrollbar w-full min-h-[400px]";
@@ -65,7 +65,7 @@ export const moduleTableEmptyClass =
   "bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-14 text-center text-zinc-400 font-bold";
 
 export const moduleTableDesktopWrapClass =
-  "hidden md:block overflow-hidden rounded-2xl border border-border bg-card dark:border-zinc-700 dark:bg-zinc-900/40 shadow-sm";
+  "hidden md:block overflow-hidden rounded-2xl border border-border bg-white dark:border-zinc-700 dark:bg-zinc-900 shadow-none";
 
 export const moduleTableListShellClass = cn(
   moduleTableShellClass,

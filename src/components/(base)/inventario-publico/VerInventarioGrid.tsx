@@ -7,7 +7,8 @@ import { ContactSection } from "@/components/(base)/(home)/contact";
 import { ServicesSection } from "@/components/(base)/(home)/services";
 import { cn } from "@/lib/utils";
 import { modulePageShellClass } from "@/lib/module-layout";
-import { InventarioPublicoDetalle } from "./InventarioPublicoDetalle";
+import { VehiculoGaleriaViewerModal } from "@/components/(base)/vehiculos/forms/VehiculoGaleriaViewerModal";
+import type { VehiculoListRow } from "@/components/(base)/vehiculos/lib/zod";
 import { InventarioPublicoSeccion } from "./InventarioPublicoSeccion";
 import { useInventarioUi } from "./lib/inventario-ui-context";
 import { usePublicInventory } from "./lib/hooks";
@@ -35,7 +36,9 @@ export function VerInventarioGrid() {
         className={cn(
           modulePageShellClass,
           sectionScrollMarginEmbedded,
-          "min-h-0 pt-0 pb-0 md:pt-2 md:pb-8 mt-0",
+          fromVehiculos
+            ? "min-h-0 pt-0 pb-0 md:pt-0 md:pb-8 mt-0"
+            : "min-h-0 pt-0 pb-0 md:pt-0 md:pb-8 mt-0 md:mt-4",
         )}
       >
         <InventarioPublicoSeccion
@@ -51,9 +54,8 @@ export function VerInventarioGrid() {
         <ContactSection />
       </div>
 
-      <InventarioPublicoDetalle
-        item={selected}
-        isOpen={selected !== null}
+      <VehiculoGaleriaViewerModal
+        row={(selected?.invoiceRow as VehiculoListRow | undefined) ?? null}
         onClose={() => setSelected(null)}
       />
     </div>

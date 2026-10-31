@@ -19,12 +19,17 @@ type CarPdfInlineViewerProps = {
 
 export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(1);
   const [pdfLib, setPdfLib] = useState<ReactPdfModule | null>(
     () => getLoadedReactPdf(),
   );
   const [baseWidth, setBaseWidth] = useState(640);
   const [numPages, setNumPages] = useState(0);
   const [zoom, setZoom] = useState(1);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +61,45 @@ export function CarPdfInlineViewer({ url, className }: CarPdfInlineViewerProps) 
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let startDistance = 0;
+    let startZoom = 1;
+
+    const distance = (touches: TouchList) => {
+      const a = touches.item(0);
+      const b = touches.item(1);
+      if (!a || !b) return 0;
+      return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return;
+      startDistance = distance(event.touches);
+      startZoom = zoomRef.current;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 2 || startDistance <= 0) return;
+      event.preventDefault();
+      const next = startZoom * (distance(event.touches) / startDistance);
+      const clamped = Math.min(
+        ZOOM_MAX,
+        Math.max(ZOOM_MIN, Math.round(next * 100) / 100),
+      );
+      setZoom(clamped);
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [pdfLib]);
 
   const pageWidth = Math.round(baseWidth * zoom);
 

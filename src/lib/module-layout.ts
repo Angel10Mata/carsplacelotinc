@@ -8,7 +8,7 @@ export const modulePageShellClass = [
   "mx-auto flex flex-col gap-6",
   "px-0 md:px-5",
   "pt-32 pb-0 md:pt-28 md:pb-8",
-  "relative mt-4 md:mt-8 min-h-screen",
+  "relative mt-4 md:mt-4 min-h-screen",
 ].join(" ");
 
 export const modulePageShellFixedClass = [
@@ -17,11 +17,11 @@ export const modulePageShellFixedClass = [
   "mx-auto flex flex-col gap-6",
   "px-0 md:px-5",
   "pt-32 pb-0 md:pt-28 md:pb-8",
-  "relative mt-4 md:mt-8 flex-1 min-h-0 h-screen",
+  "relative mt-4 md:mt-4 flex-1 min-h-0 h-screen",
 ].join(" ");
 
 export const dashboardOuterClass =
-  "relative z-10 w-full flex-1 flex flex-col items-stretch justify-start px-3 sm:px-4 md:px-5 lg:px-6 py-4 pb-6 md:py-12 min-h-0 md:mt-8";
+  "relative z-10 w-full flex-1 flex flex-col items-stretch justify-start px-3 sm:px-4 md:px-5 lg:px-6 py-4 pb-6 md:py-12 min-h-0 md:mt-4";
 
 export const dashboardInnerClass = [
   "w-full",

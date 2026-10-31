@@ -41,13 +41,15 @@ function resolveModuleTheme(_moduleId: string): ModuleTheme {
 
 function DashboardHeader() {
   return (
-    <header className="mb-5 md:mb-7 w-full pl-3 md:pl-0">
-      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-brand dark:text-brand-bright">
-        Panel
-      </p>
-      <h1 className="mt-1 text-2xl font-black uppercase leading-none tracking-tight text-foreground sm:text-3xl md:text-4xl">
-        Administración
-      </h1>
+    <header className="mb-5 w-full min-w-0 text-center md:mb-7 md:pl-0 md:text-left">
+      <div className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap md:flex-col md:items-start md:justify-start md:gap-0 md:whitespace-normal">
+        <p className="shrink-0 text-lg font-black uppercase leading-none tracking-tight text-brand dark:text-brand-bright md:text-[10px] md:font-bold md:tracking-[0.28em]">
+          Panel
+        </p>
+        <h1 className="min-w-0 text-lg font-black uppercase leading-none tracking-tight text-foreground md:mt-1 md:text-2xl md:text-3xl">
+          Administración
+        </h1>
+      </div>
     </header>
   );
 }

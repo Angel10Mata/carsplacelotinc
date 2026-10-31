@@ -81,6 +81,8 @@ export type VehiculoListRow = {
   incoterms: string | null;
   estado: string | null;
   invoiceDate: string;
+  createdAt: string;
+  numeroRegistro: number;
   clienteNombre: string | null;
   clienteNit: string | null;
   clienteDireccion: string | null;

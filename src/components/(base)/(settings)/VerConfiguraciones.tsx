@@ -71,7 +71,7 @@ const handleAuthChange = (checked: boolean) => {
       <div className="flex flex-col gap-1 w-full text-center items-center">
         <div className="flex items-center gap-3">
           <ModuleHeaderBackButton size="sm" />
-          <h1 className="text-3xl font-bold tracking-tighter text-foreground">
+          <h1 className="text-2xl font-bold tracking-tighter text-foreground">
             Configuraciones
           </h1>
         </div>

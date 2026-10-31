@@ -10,7 +10,7 @@ import { UserProvider } from "@/components/(base)/providers/UserProvider";
 import { InventarioUiProvider } from "@/components/(base)/inventario-publico/lib/inventario-ui-context";
 import OfflineBanner from "@/components/OfflineBanner";
 import ObsToastContainer from "@/components/(base)/layout/ObsToastContainer";
-import { APP_LOGO_PATH, APP_NAME } from "@/lib/app-config";
+import { APP_LOGO_PATH, APP_NAME_UPPER } from "@/lib/app-config";
 import { resolveUserRole } from "@/lib/user-role";
 
 // Fuentes y metadatos de la app
@@ -34,15 +34,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Cars Place Lot",
-  description: "The Car Place Lot Inc — gestión vehicular",
+  title: APP_NAME_UPPER,
+  applicationName: APP_NAME_UPPER,
+  description: "THE CARS PLACE LOT INC — gestión vehicular",
   other: {
     google: "notranslate",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Cars Place Lot",
+    title: APP_NAME_UPPER,
   },
   icons: {
     icon: APP_LOGO_PATH,

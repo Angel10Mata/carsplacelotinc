@@ -6,7 +6,6 @@ import { Hash, User } from "lucide-react";
 import { SigetActionButton, sigetAccent } from "@/components/ui/siget-action-button";
 import { sigetTablaFotosVerBotonClass } from "@/components/ui/siget-tabla-acciones-ui";
 import {
-  SigetMobileRecordFooter,
   SigetMobileRecordHeader,
   SigetMobileRecordList,
   SigetMobileRecordMeta,
@@ -20,7 +19,6 @@ import type { VehiculoListRow } from "./lib/zod";
 
 type VehiculosTablaMobileCardsProps = {
   items: VehiculoListRow[];
-  rowOffset: number;
   showCliente?: boolean;
   onVerGaleria: (row: VehiculoListRow) => void;
   renderAcciones: (row: VehiculoListRow) => ReactNode;
@@ -28,14 +26,13 @@ type VehiculosTablaMobileCardsProps = {
 
 export function VehiculosTablaMobileCards({
   items,
-  rowOffset,
   showCliente = true,
   onVerGaleria,
   renderAcciones,
 }: VehiculosTablaMobileCardsProps) {
   return (
     <SigetMobileRecordList>
-      {items.map((row, idx) => (
+      {items.map((row) => (
         <SigetMobileRecordRow key={row.id}>
           <SigetMobileRecordHeader
             title={
@@ -53,7 +50,7 @@ export function VehiculosTablaMobileCards({
             }
             badge={
               <span className="tabular-nums text-sm font-semibold text-muted-foreground">
-                #{rowOffset + idx + 1}
+                #{row.numeroRegistro}
               </span>
             }
           />
@@ -64,29 +61,28 @@ export function VehiculosTablaMobileCards({
                 {row.clienteNombre ?? "—"}
               </SigetMobileRecordMetaRow>
             ) : null}
-            <SigetMobileRecordMetaRow icon={<Hash className={sigetMobileRecordMetaIconClass} />}>
+            <SigetMobileRecordMetaRow
+              icon={<Hash className={sigetMobileRecordMetaIconClass} />}
+              trailing={
+                <>
+                  <SigetActionButton
+                    label="Ver"
+                    accentColor={sigetAccent.abrir}
+                    morphFrom={ImageNode}
+                    morphTo={ImagesNode}
+                    onClick={() => onVerGaleria(row)}
+                    className={sigetTablaFotosVerBotonClass}
+                    ariaLabel={`Ver fotos y factura de ${row.placa}`}
+                  />
+                  {renderAcciones(row)}
+                </>
+              }
+            >
               <span className="font-mono text-sm uppercase tracking-tight">
                 {row.vin ?? "—"}
               </span>
             </SigetMobileRecordMetaRow>
           </SigetMobileRecordMeta>
-
-          <SigetMobileRecordFooter
-            right={
-              <>
-                <SigetActionButton
-                  label="Ver"
-                  accentColor={sigetAccent.abrir}
-                  morphFrom={ImageNode}
-                  morphTo={ImagesNode}
-                  onClick={() => onVerGaleria(row)}
-                  className={sigetTablaFotosVerBotonClass}
-                  ariaLabel={`Ver fotos y factura de ${row.placa}`}
-                />
-                {renderAcciones(row)}
-              </>
-            }
-          />
         </SigetMobileRecordRow>
       ))}
     </SigetMobileRecordList>

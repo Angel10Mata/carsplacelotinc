@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   cambiarVistaFiltro,
+  etiquetaMesLargo,
   etiquetaRangoSemanaCorto,
   moverFiltroCalendario,
   opcionesSemanaMes,
@@ -38,8 +39,8 @@ const VISTAS: Array<{ value: ReporteriaVista; label: string }> = [
 ];
 
 const CAMPOS: Array<{ value: ReporteriaCampoFecha; label: string }> = [
-  { value: "registro", label: "Registro" },
   { value: "factura", label: "Factura compra" },
+  { value: "registro", label: "Registro" },
 ];
 
 const pillShellClass =
@@ -169,7 +170,7 @@ export function ReporteriaFiltros({
         {filtro.vista === "mes" ? (
           <div
             className={cn(
-              "grid w-full grid-cols-2 items-center gap-2 border-t border-zinc-100 pt-2.5 dark:border-zinc-800",
+              "grid w-full grid-cols-1 items-center gap-2 border-t border-zinc-100 pt-2.5 dark:border-zinc-800 sm:grid-cols-2",
               "lg:flex lg:w-auto lg:flex-nowrap lg:border-0 lg:border-l lg:border-zinc-100 lg:pt-0 lg:pl-2 lg:pr-1 dark:lg:border-zinc-800",
             )}
           >
@@ -259,7 +260,7 @@ function MesPicker({
     return () => observer.disconnect();
   }, [open]);
 
-  const etiqueta = `${MESES_CORTOS[selectedMonth - 1] ?? mes} ${selectedYear}`;
+  const etiqueta = etiquetaMesLargo(mes);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -268,17 +269,17 @@ function MesPicker({
           ref={triggerRef}
           type="button"
           className={cn(
-            "inline-flex h-9 w-full min-w-0 cursor-pointer items-center justify-between gap-1.5 rounded-full border border-brand/35 bg-white px-2.5 text-sm font-semibold text-brand shadow-none",
+            "inline-flex h-9 w-full shrink-0 cursor-pointer items-center justify-between gap-1.5 rounded-full border border-brand/35 bg-white px-2.5 text-sm font-semibold text-brand shadow-none",
             "hover:border-brand/55 hover:bg-brand/5",
             "focus-visible:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20",
             "dark:border-brand-bright/40 dark:bg-zinc-900 dark:text-brand-bright dark:hover:bg-brand-bright/10",
             "dark:focus-visible:ring-brand-bright/25",
-            "lg:w-[9.75rem] lg:max-w-none lg:px-3",
+            "lg:w-auto lg:min-w-[13.75rem] lg:px-3",
           )}
           aria-label="Elegir mes"
         >
           <CalendarDays className="size-4 shrink-0 max-sm:hidden" aria-hidden />
-          <span className="min-w-0 flex-1 truncate text-center tabular-nums sm:text-left">
+          <span className="flex-1 whitespace-nowrap text-center sm:text-left">
             {etiqueta}
           </span>
           <ChevronDown className="size-4 shrink-0 opacity-70" aria-hidden />

@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { CarFront, ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
 import { ModuleDataLoadingPanel } from "@/components/ui/module-page-loading";
 import { AuroraText } from "@/components/ui/aurora-text";
 import { TCPL_AURORA_COLORS, TCPL_AURORA_MUTED } from "@/lib/brand-colors";
-import { ModuleHeaderBackButton } from "@/components/(base)/layout/ModuleHeaderBackButton";
 import { VEHICULOS_MODULE_PATH } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 import type { PublicInventoryItem } from "./lib/zod";
@@ -20,6 +20,30 @@ type InventarioPublicoSeccionProps = {
   onSelect: (item: PublicInventoryItem) => void;
 };
 
+function InventoryGridSlot() {
+  return (
+    <div
+      aria-hidden
+      className="invisible pointer-events-none hidden overflow-hidden rounded-4xl border border-transparent md:flex md:flex-col"
+    >
+      <div className="aspect-16/11 w-full" />
+      <div className="flex flex-col p-5 pt-2">
+        <div className="flex w-full items-center justify-between">
+          <span className="text-xs sm:text-sm">&nbsp;</span>
+          <span className="text-lg">&nbsp;</span>
+        </div>
+        <h3 className="mt-0.5 text-lg">&nbsp;</h3>
+        <p className="mt-1 text-xs sm:text-sm">&nbsp;</p>
+        <div className="my-3 h-px w-full" />
+        <div className="flex items-center justify-between">
+          <span className="text-xl">&nbsp;</span>
+          <span className="rounded-xl px-5 py-2.5 text-[11px]">&nbsp;</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InventarioPublicoSeccion({
   embedded = false,
   backFromVehiculos = false,
@@ -30,18 +54,8 @@ export function InventarioPublicoSeccion({
 }: InventarioPublicoSeccionProps) {
   const embeddedFromVehiculos = embedded && backFromVehiculos;
   const [searchTerm, setSearchTerm] = useState("");
-  const [showGrid, setShowGrid] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number | "all">(8);
-
-  useEffect(() => {
-    if (!isLoading && items.length >= 0) {
-      const t = window.setTimeout(() => setShowGrid(true), 100);
-      return () => window.clearTimeout(t);
-    }
-    setShowGrid(false);
-    return undefined;
-  }, [isLoading, items.length]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -65,6 +79,8 @@ export function InventarioPublicoSeccion({
   const endIndex =
     itemsPerPage === "all" ? filtered.length : startIndex + itemsPerPage;
   const pageItems = filtered.slice(startIndex, endIndex);
+  const emptySlots =
+    itemsPerPage === "all" ? 0 : Math.max(0, itemsPerPage - pageItems.length);
 
   return (
     <section
@@ -72,74 +88,57 @@ export function InventarioPublicoSeccion({
       className={cn(
         "flex w-full flex-col overflow-x-hidden bg-background",
         embedded
-          ? "min-h-0 border-0 pt-8 sm:pt-5 md:pt-2"
+          ? embeddedFromVehiculos
+            ? "min-h-0 border-0 pt-0"
+            : "min-h-0 border-0 pt-8 sm:pt-5 md:pt-2"
           : "min-h-screen snap-start border-b border-border/40 pt-24",
       )}
     >
       <div
         className={cn(
           "mx-auto flex w-full max-w-7xl flex-col px-6 lg:px-12",
-          embeddedFromVehiculos ? "gap-3 pb-1 pt-2 sm:pt-0" : "gap-0",
+          embeddedFromVehiculos ? "gap-2 pb-1 pt-0" : "gap-0",
         )}
       >
         {embeddedFromVehiculos ? (
-          <div className="relative z-10 flex w-full items-center gap-3">
-            <ModuleHeaderBackButton
-              className="mt-0 shrink-0"
-              size="sm"
-              href={VEHICULOS_MODULE_PATH}
-              ariaLabel="Volver a gestión de vehículos"
-            />
-            <div className="min-w-0 text-left">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Gestión de vehículos
-              </p>
-              <p className="text-sm font-semibold leading-tight text-foreground">
-                Vista pública del inventario
-              </p>
-            </div>
-          </div>
+          <Link
+            href={VEHICULOS_MODULE_PATH}
+            className="relative z-10 mt-1 inline-flex w-fit items-center gap-1 text-sm font-semibold text-brand transition-colors hover:text-brand/80 md:mt-2 dark:text-brand-bright dark:hover:text-brand-bright/80"
+          >
+            <ChevronLeft className="size-4 shrink-0" aria-hidden />
+            Volver a vehículos
+          </Link>
         ) : null}
 
         <div
           className={cn(
             "flex shrink-0 flex-col items-center justify-center text-center transition-all duration-1000 ease-out",
-            embeddedFromVehiculos ? "pt-1 sm:-mt-10 sm:pt-0 lg:-mt-11" : "px-0",
-            showGrid ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+            embeddedFromVehiculos ? "pt-4 sm:pt-5" : "px-0",
           )}
         >
-        <h1
-          className={cn(
-            "max-w-4xl font-black uppercase leading-none tracking-tighter text-foreground",
-            embeddedFromVehiculos
-              ? "text-2xl sm:text-4xl lg:text-5xl"
-              : "text-3xl sm:text-5xl lg:text-6xl",
-          )}
-        >
+        <h1 className="flex max-w-5xl flex-col items-center font-black uppercase leading-[0.92] tracking-tighter text-3xl sm:text-6xl lg:text-7xl">
           <AuroraText colors={[...TCPL_AURORA_COLORS]}>Premium Selection</AuroraText>
-          <br />
-          <AuroraText className="text-muted-foreground/50" colors={[...TCPL_AURORA_MUTED]}>
+          <AuroraText
+            className="text-3xl text-zinc-500 sm:text-5xl lg:text-6xl dark:text-zinc-400"
+            colors={[...TCPL_AURORA_MUTED]}
+          >
             at The Cars Place.
           </AuroraText>
         </h1>
 
-        <p
-          className={cn(
-            "max-w-lg text-sm font-medium text-muted-foreground/80 sm:text-base",
-            embeddedFromVehiculos ? "mt-3 mb-5" : "mt-6 mb-10",
-          )}
-        >
+        <p className="mt-6 mb-6 max-w-xs text-[13px] font-medium leading-relaxed text-zinc-500 dark:text-zinc-400 sm:mt-8 sm:mb-8 sm:max-w-lg sm:text-[15px]">
           Explore our curated inventory of vehicles. Each unit is documented and verified for
           transparency.
         </p>
 
         <div
           className={cn(
-            "inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-primary",
+            "inline-flex items-center gap-1.5 rounded-full border border-zinc-300 bg-zinc-100 px-3.5 py-1 text-[10px] font-bold uppercase tracking-widest text-zinc-600",
+            "dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
             embeddedFromVehiculos ? "mb-4" : "mb-6",
           )}
         >
-          <CarFront className="size-4" aria-hidden />
+          <CarFront className="size-3.5" aria-hidden />
           Inventory 2026
         </div>
 
@@ -205,9 +204,7 @@ export function InventarioPublicoSeccion({
                   }}
                   className={cn(
                     "group relative flex cursor-pointer flex-col overflow-hidden rounded-4xl border border-gray-400 bg-card/30 shadow-none backdrop-blur-sm transition-all duration-700 ease-out hover:-translate-y-1 hover:border-primary/50",
-                    showGrid ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0",
                   )}
-                  style={{ transitionDelay: `${idx * 50}ms` }}
                 >
                   <div className="relative aspect-16/11 overflow-hidden border-b border-gray-400 bg-zinc-900">
                     {item.coverImageUrl ? (
@@ -262,11 +259,14 @@ export function InventarioPublicoSeccion({
                 </div>
               );
             })}
+            {Array.from({ length: emptySlots }, (_, i) => (
+              <InventoryGridSlot key={`inventory-slot-${i}`} />
+            ))}
           </div>
         ) : null}
 
         {!isLoading && !isError && filtered.length > 0 ? (
-          <div className="mt-12 flex w-full flex-wrap items-center justify-center gap-4">
+          <div className="mt-12 flex w-full shrink-0 flex-wrap items-center justify-center gap-4">
             <div className="flex items-center rounded-xl bg-foreground px-6 py-3 text-background shadow-lg">
               <select
                 value={itemsPerPage}

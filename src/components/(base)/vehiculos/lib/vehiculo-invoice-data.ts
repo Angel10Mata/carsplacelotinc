@@ -1,7 +1,7 @@
 import type { VehiculoListRow } from "./zod";
 
 export type VehiculoFacturaPdfData = {
-  logoSrc: string;
+  logoSrc: string | null;
   invoiceNumber: string;
   invoiceDateDisplay: string;
   customerName: string;

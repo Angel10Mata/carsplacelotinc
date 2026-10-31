@@ -232,12 +232,6 @@ export default function EditarVehiculoModal({
     }
     if (carImagePaths.length > 0) {
       const folderFromPaths = folderFromCarMediaStoragePath(carImagePaths[0] ?? "");
-      if (folderFromPaths && folderFromPaths !== folderFromMarca) {
-        toast.warn(
-          "Ya hay archivos subidos. Quita las miniaturas antes de cambiar marca/modelo.",
-        );
-        return;
-      }
       setCarStorageFolderId(folderFromPaths ?? folderFromMarca);
     } else {
       setCarStorageFolderId(folderFromMarca);
@@ -254,7 +248,7 @@ export default function EditarVehiculoModal({
       contentClassName={vehiculosWizardModalContentClass}
     >
       {isLoading || !ready ? (
-        <ModalLoadingBody minHeightClass="min-h-[42rem]" />
+        <ModalLoadingBody minHeightClass="min-h-[min(42rem,calc(100dvh-10rem))]" />
       ) : (
         <ModalForm
           className={vehiculosWizardFormClass}

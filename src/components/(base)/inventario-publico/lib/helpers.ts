@@ -39,7 +39,8 @@ export function formatPublicInvoiceDateLabel(iso: string): string {
     year: "numeric",
   })
     .format(parsed)
-    .toUpperCase();
+    .toUpperCase()
+    .replace(",", "");
 }
 
 export function mapCarRowToPublicInventoryItem(

@@ -1,6 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Children,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ban as BanNode, Check as CheckNode, Save, Trash, Trash2, X } from "lucide";
@@ -32,19 +40,151 @@ const MODAL_SHELL_TRANSITION = {
   ease: MODAL_SHELL_EASE,
 } as const;
 
-function lockBodyScroll() {
-  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-  const prevOverflow = document.body.style.overflow;
-  const prevPaddingRight = document.body.style.paddingRight;
+const PAGE_SCROLL_OVERFLOW = new Set(["auto", "scroll", "overlay"]);
+const PAGE_SCROLL_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+  " ",
+]);
 
-  document.body.style.overflow = "hidden";
-  if (scrollbarWidth > 0) {
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
+let pageScrollLocks = 0;
+let restorePageScroll: (() => void) | null = null;
+
+function isElementScrollable(el: Element): boolean {
+  if (!(el instanceof HTMLElement)) return false;
+  const style = window.getComputedStyle(el);
+  const canY =
+    PAGE_SCROLL_OVERFLOW.has(style.overflowY) &&
+    el.scrollHeight > el.clientHeight + 1;
+  const canX =
+    PAGE_SCROLL_OVERFLOW.has(style.overflowX) &&
+    el.scrollWidth > el.clientWidth + 1;
+  return canY || canX;
+}
+
+function findScrollableAncestor(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof Element)) return null;
+  let el: Element | null = target;
+  while (el && el !== document.body && el !== document.documentElement) {
+    if (el instanceof HTMLElement && isElementScrollable(el)) return el;
+    el = el.parentElement;
   }
+  return null;
+}
+
+function canElementScroll(el: HTMLElement, deltaX: number, deltaY: number): boolean {
+  if (deltaY < 0 && el.scrollTop > 0) return true;
+  if (deltaY > 0 && el.scrollTop < el.scrollHeight - el.clientHeight - 1) {
+    return true;
+  }
+  if (deltaX < 0 && el.scrollLeft > 0) return true;
+  if (deltaX > 0 && el.scrollLeft < el.scrollWidth - el.clientWidth - 1) {
+    return true;
+  }
+  return false;
+}
+
+function applyPageScrollLock() {
+  const html = document.documentElement;
+  const body = document.body;
+  const scrollbarWidth = window.innerWidth - html.clientWidth;
+  const lockedX = window.scrollX;
+  const lockedY = window.scrollY;
+  const prevHtmlOverflow = html.style.overflow;
+  const prevBodyOverflow = body.style.overflow;
+  const prevHtmlOverscroll = html.style.overscrollBehavior;
+  const prevBodyOverscroll = body.style.overscrollBehavior;
+  const prevBodyPaddingRight = body.style.paddingRight;
+  const prevBodyPosition = body.style.position;
+  const prevBodyTop = body.style.top;
+  const prevBodyLeft = body.style.left;
+  const prevBodyRight = body.style.right;
+  const prevBodyWidth = body.style.width;
+
+  html.style.overflow = "hidden";
+  body.style.overflow = "hidden";
+  html.style.overscrollBehavior = "none";
+  body.style.overscrollBehavior = "none";
+  if (scrollbarWidth > 0) {
+    body.style.paddingRight = `${scrollbarWidth}px`;
+  }
+  body.style.position = "fixed";
+  body.style.top = `-${lockedY}px`;
+  body.style.left = "0";
+  body.style.right = "0";
+  body.style.width = "100%";
+  html.setAttribute("data-modal-open", "");
+
+  const onWheel = (event: WheelEvent) => {
+    const scrollable = findScrollableAncestor(event.target);
+    if (scrollable && canElementScroll(scrollable, event.deltaX, event.deltaY)) {
+      return;
+    }
+    event.preventDefault();
+  };
+  const onTouchMove = (event: TouchEvent) => {
+    if (findScrollableAncestor(event.target)) return;
+    event.preventDefault();
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (!PAGE_SCROLL_KEYS.has(event.key)) return;
+    const target = event.target;
+    if (target instanceof HTMLElement) {
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (target.isContentEditable) return;
+      if (findScrollableAncestor(target)) return;
+    }
+    event.preventDefault();
+  };
+  const onScroll = () => {
+    window.scrollTo(0, 0);
+  };
+
+  document.addEventListener("wheel", onWheel, { capture: true, passive: false });
+  document.addEventListener("touchmove", onTouchMove, {
+    capture: true,
+    passive: false,
+  });
+  document.addEventListener("keydown", onKeyDown, { capture: true });
+  window.addEventListener("scroll", onScroll, { capture: true, passive: false });
 
   return () => {
-    document.body.style.overflow = prevOverflow;
-    document.body.style.paddingRight = prevPaddingRight;
+    window.removeEventListener("scroll", onScroll, { capture: true });
+    document.removeEventListener("wheel", onWheel, { capture: true });
+    document.removeEventListener("touchmove", onTouchMove, { capture: true });
+    document.removeEventListener("keydown", onKeyDown, { capture: true });
+    html.style.overflow = prevHtmlOverflow;
+    body.style.overflow = prevBodyOverflow;
+    html.style.overscrollBehavior = prevHtmlOverscroll;
+    body.style.overscrollBehavior = prevBodyOverscroll;
+    body.style.paddingRight = prevBodyPaddingRight;
+    body.style.position = prevBodyPosition;
+    body.style.top = prevBodyTop;
+    body.style.left = prevBodyLeft;
+    body.style.right = prevBodyRight;
+    body.style.width = prevBodyWidth;
+    html.removeAttribute("data-modal-open");
+    window.scrollTo(lockedX, lockedY);
+  };
+}
+
+export function lockPageScroll() {
+  if (typeof document === "undefined") return () => undefined;
+  if (pageScrollLocks === 0) {
+    restorePageScroll = applyPageScrollLock();
+  }
+  pageScrollLocks += 1;
+  return () => {
+    pageScrollLocks = Math.max(0, pageScrollLocks - 1);
+    if (pageScrollLocks === 0 && restorePageScroll) {
+      restorePageScroll();
+      restorePageScroll = null;
+    }
   };
 }
 
@@ -72,9 +212,21 @@ export function ModalForm({
   children,
   ...props
 }: React.FormHTMLAttributes<HTMLFormElement>) {
+  const childArray = Children.toArray(children);
+  const last = childArray.at(-1);
+  const footer =
+    isValidElement(last) && last.type === ModalFooter ? last : null;
+  const body = footer ? childArray.slice(0, -1) : childArray;
+
   return (
-    <form {...props} className={cn("space-y-4", className)}>
-      {children}
+    <form
+      {...props}
+      className={cn("flex h-full min-h-0 flex-1 flex-col", className)}
+    >
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain">
+        {body}
+      </div>
+      {footer}
     </form>
   );
 }
@@ -252,21 +404,21 @@ export function ModalFechaCalendario({
     setInputValue(formatFechaManualGt(value));
   }, [value]);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 280 });
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0, width: 296 });
 
   const syncPanelPosition = useCallback(() => {
     const anchor = fieldRef.current;
     if (!anchor) return;
     const rect = anchor.getBoundingClientRect();
-    const width = Math.round(rect.width);
+    const width = Math.max(Math.round(rect.width), 296);
     let left = rect.left;
     const maxLeft = window.innerWidth - width - 8;
     if (left > maxLeft) left = Math.max(8, maxLeft);
 
-    const panelHeight = panelRef.current?.offsetHeight ?? 320;
-    let top = rect.bottom + 6;
+    const panelHeight = panelRef.current?.offsetHeight ?? 340;
+    let top = rect.bottom + 8;
     if (top + panelHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - panelHeight - 6);
+      top = Math.max(8, rect.top - panelHeight - 8);
     }
 
     setPanelPos({ top, left, width });
@@ -287,6 +439,7 @@ export function ModalFechaCalendario({
     if (!open) return;
 
     syncPanelPosition();
+    const raf = requestAnimationFrame(() => syncPanelPosition());
     window.addEventListener("resize", syncPanelPosition);
     window.addEventListener("scroll", syncPanelPosition, true);
     const anchor = fieldRef.current;
@@ -294,6 +447,7 @@ export function ModalFechaCalendario({
       anchor != null ? new ResizeObserver(() => syncPanelPosition()) : null;
     if (anchor && observer) observer.observe(anchor);
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", syncPanelPosition);
       window.removeEventListener("scroll", syncPanelPosition, true);
       observer?.disconnect();
@@ -369,9 +523,9 @@ export function ModalFechaCalendario({
                 width: panelPos.width,
                 zIndex: 250,
               }}
-              className="rounded-xl border border-zinc-200 bg-white p-3 opacity-100 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+              className="rounded-2xl border border-zinc-200 bg-white p-4 opacity-100 shadow-[0_16px_40px_rgba(15,23,42,0.14)] dark:border-zinc-600 dark:bg-zinc-900"
             >
-              <div className="mb-3 flex items-center justify-between gap-2 border-b border-zinc-100 pb-2 dark:border-zinc-800">
+              <div className="mb-3 flex items-center justify-between gap-2 border-b border-zinc-100 pb-3 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => {
@@ -382,12 +536,12 @@ export function ModalFechaCalendario({
                     }
                     setNavMonth((m) => m - 1);
                   }}
-                  className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                   aria-label="Mes anterior"
                 >
                   <ChevronLeft className="size-4" />
                 </button>
-                <p className="text-center text-sm font-bold text-brand dark:text-brand-bright">
+                <p className="min-w-0 flex-1 truncate text-center text-sm font-bold capitalize text-brand dark:text-brand-bright">
                   {MESES_ES[navMonth]} {navYear}
                 </p>
                 <button
@@ -400,22 +554,22 @@ export function ModalFechaCalendario({
                     }
                     setNavMonth((m) => m + 1);
                   }}
-                  className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  className="flex size-9 cursor-pointer items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                   aria-label="Mes siguiente"
                 >
                   <ChevronRight className="size-4" />
                 </button>
               </div>
 
-              <div className="mb-1 grid grid-cols-7 gap-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 {["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"].map((d) => (
-                  <div key={d} className="py-1">
+                  <div key={d} className="py-0.5">
                     {d}
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-0.5">
+              <div className="grid grid-cols-7 gap-1">
                 {cells.map((cell, idx) => {
                   const cellIso = `${cell.year}-${pad2(cell.month + 1)}-${pad2(cell.day)}`;
                   const selected = normalized === cellIso;
@@ -429,20 +583,20 @@ export function ModalFechaCalendario({
                         setOpen(false);
                       }}
                       className={cn(
-                        "cursor-pointer rounded-lg py-1.5 text-xs font-semibold transition-colors",
+                        "mx-auto flex size-9 cursor-pointer items-center justify-center rounded-full text-sm font-semibold tabular-nums transition-colors",
                         selected &&
-                          "bg-brand text-white dark:bg-brand-bright",
+                          "bg-brand text-white shadow-sm dark:bg-brand-bright dark:text-zinc-950",
                         !selected &&
                           cell.isCurrentMonth &&
                           isToday &&
-                          "border border-brand text-brand dark:border-brand-bright dark:text-brand-bright",
+                          "ring-2 ring-brand/80 text-brand dark:ring-brand-bright/80 dark:text-brand-bright",
                         !selected &&
                           cell.isCurrentMonth &&
                           !isToday &&
                           "text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800",
                         !selected &&
                           !cell.isCurrentMonth &&
-                          "text-muted-foreground/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                          "text-zinc-400 hover:bg-zinc-50 dark:text-zinc-500 dark:hover:bg-zinc-800/80",
                       )}
                     >
                       {cell.day}
@@ -451,14 +605,14 @@ export function ModalFechaCalendario({
                 })}
               </div>
 
-              <div className="mt-2 flex justify-end border-t border-zinc-100 pt-2 dark:border-zinc-800">
+              <div className="mt-3 flex justify-end border-t border-zinc-100 pt-3 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => {
                     onChange(hoyIso);
                     setOpen(false);
                   }}
-                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold text-brand hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10"
+                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-brand hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10"
                 >
                   Hoy
                 </button>
@@ -640,7 +794,7 @@ export function ModalFooter({
     <div
       className={cn(
         "mt-auto flex shrink-0 flex-wrap items-center justify-center gap-3 border-t border-zinc-200/80 bg-zinc-100 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-zinc-700 dark:bg-zinc-800",
-        "max-md:w-full max-md:rounded-b-none",
+        "max-md:-mx-4 max-md:-mb-4 max-md:w-[calc(100%+2rem)] max-md:rounded-b-none",
         "md:mt-3 md:-mx-6 md:-mb-6 md:w-[calc(100%+3rem)] md:rounded-b-3xl md:pb-4",
         className,
       )}
@@ -832,7 +986,7 @@ function ModalFrame({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-zinc-100 shadow-lg max-md:rounded-none max-md:border-0 dark:border-zinc-700 dark:bg-zinc-800",
+        "flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-3xl border border-zinc-200/80 bg-zinc-100 shadow-lg max-md:rounded-none max-md:border-0 dark:border-zinc-700 dark:bg-zinc-800",
         className,
       )}
     >
@@ -881,15 +1035,10 @@ export function ModalShell({
 }) {
   const visible = open ?? isOpen ?? false;
   const resolvedSubtitle = subtitle ?? description;
-  const [contentScrollable, setContentScrollable] = useState(false);
 
   useEffect(() => {
-    if (!visible) {
-      setContentScrollable(false);
-      return;
-    }
-    setContentScrollable(false);
-    return lockBodyScroll();
+    if (!visible) return;
+    return lockPageScroll();
   }, [visible]);
 
   if (typeof document === "undefined") return null;
@@ -915,11 +1064,8 @@ export function ModalShell({
           animate={shellAnimate}
           exit={shellExit}
           transition={MODAL_SHELL_TRANSITION}
-          onAnimationComplete={() => {
-            setContentScrollable(true);
-          }}
           className={cn(
-            "fixed inset-0 z-[200] flex flex-col overflow-hidden",
+            "fixed inset-0 z-[200] flex flex-col overflow-hidden overscroll-none md:overflow-y-auto md:overscroll-contain",
             fullscreen
               ? "bg-zinc-100 dark:bg-zinc-900"
               : fullHeight
@@ -935,7 +1081,7 @@ export function ModalShell({
           ) : null}
           <div
             className={cn(
-              "relative z-10 flex min-h-0 w-full flex-col",
+              "relative z-10 flex min-h-0 w-full max-h-full flex-col overflow-hidden",
               fullscreen && "h-dvh max-w-none",
               fullHeight &&
                 cn(
@@ -945,7 +1091,11 @@ export function ModalShell({
                 ),
               !fullscreen &&
                 !fullHeight &&
-                cn("max-md:h-dvh max-md:min-h-0 max-md:flex-1 max-md:max-w-none", maxWidth),
+                cn(
+                  "max-md:h-dvh max-md:min-h-0 max-md:flex-1 max-md:max-w-none",
+                  "md:max-h-[calc(100dvh-2rem)]",
+                  maxWidth,
+                ),
               className,
             )}
           >
@@ -964,7 +1114,7 @@ export function ModalShell({
                 )}
               >
                 {title || resolvedSubtitle ? (
-                  <div className="min-w-0 shrink">
+                  <div className="min-w-0 flex-1 shrink">
                     {title ? (
                       <h3
                         className={cn(
@@ -986,13 +1136,15 @@ export function ModalShell({
                       </p>
                     ) : null}
                   </div>
-                ) : null}
+                ) : (
+                  <div className="min-w-0 flex-1" />
+                )}
                 {headerActions ? (
                   <div
                     className={cn(
                       "flex min-w-0 items-center",
                       headerActionsAlign === "end"
-                        ? "min-w-0 flex-1 justify-end"
+                        ? "justify-end"
                         : "justify-start",
                     )}
                   >
@@ -1003,10 +1155,7 @@ export function ModalShell({
                   <button
                     type="button"
                     onClick={onClose}
-                    className={cn(
-                      "-mr-1 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-brand transition-colors hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10",
-                      headerActionsAlign === "start" && "ml-auto",
-                    )}
+                    className="-mr-1 ml-auto flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-brand transition-colors hover:bg-brand/10 dark:text-brand-bright dark:hover:bg-brand-bright/10"
                     aria-label="Cerrar"
                   >
                     <XIcon size={22} strokeWidth={2.25} />
@@ -1016,13 +1165,12 @@ export function ModalShell({
 
               <div
                 className={cn(
-                  "min-h-0 flex-1 overflow-x-hidden bg-white dark:bg-zinc-900",
-                  contentScrollable ? "overflow-y-auto overscroll-contain" : "overflow-hidden",
+                  "flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-zinc-900",
                   contentClassName ??
                     cn(
                       fullscreen &&
-                        "flex flex-col items-center justify-center p-4 md:p-6",
-                      fullHeight && "flex min-h-0 flex-1 flex-col p-4 md:p-6",
+                        "items-center justify-center p-4 md:p-6",
+                      fullHeight && "p-4 md:p-6",
                       !fullscreen && !fullHeight && "p-4 md:p-6",
                     ),
                 )}

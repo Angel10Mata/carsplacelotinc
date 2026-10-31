@@ -6,16 +6,30 @@ import {
 } from "./vehiculo-invoice-data";
 import type { VehiculoListRow } from "./zod";
 
-function logoSrcForPdf(): string {
-  return `${window.location.origin}/logo.png`;
+async function logoSrcForPdf(): Promise<string | null> {
+  try {
+    const res = await fetch("/logo.png", { cache: "force-cache" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (blob.size < 8) return null;
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("LOGO"));
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 async function renderInvoiceBlob(row: VehiculoListRow): Promise<Blob> {
-  const [{ pdf }, { VehiculoFacturaPdfDocument }] = await Promise.all([
+  const [{ pdf }, { VehiculoFacturaPdfDocument }, logoSrc] = await Promise.all([
     import("@react-pdf/renderer"),
     import("./VehiculoFacturaPdfDocument"),
+    logoSrcForPdf(),
   ]);
-  const data = buildVehiculoFacturaPdfData(row, logoSrcForPdf());
+  const data = buildVehiculoFacturaPdfData(row, logoSrc);
   return pdf(<VehiculoFacturaPdfDocument data={data} />).toBlob();
 }
 

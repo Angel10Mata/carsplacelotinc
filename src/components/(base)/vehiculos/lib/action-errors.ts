@@ -43,9 +43,9 @@ export function vehiculoActionErrorMessage(
 ): string {
   if (code === "DUPLICATE_INVOICE") {
     if (detail?.trim()) {
-      return `Ya hay un vehículo con el número de factura «${detail.trim()}». Búscalo en la tabla (columna No.) o usa otro número.`;
+      return `El número de factura «${detail.trim()}» ya fue ingresado.`;
     }
-    return "Ya hay un vehículo con ese número de factura. Búscalo en la tabla (columna No.) o usa otro número.";
+    return "Ese número de factura ya fue ingresado.";
   }
   if (code === "DUPLICATE_CAR_ID") {
     return "Ese ID de carpeta ya está asignado. Cierra el modal, ábrelo de nuevo y vuelve a subir las fotos.";

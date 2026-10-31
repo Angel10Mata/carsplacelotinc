@@ -1,41 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Check, Copy, FileText, Images, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  resolveVehiculoInvoiceSource,
-  type VehiculoInvoiceSource,
-} from "@/components/(base)/vehiculos/lib/vehiculo-galeria-items";
-import { createGeneratedInvoiceBlobUrl } from "@/components/(base)/vehiculos/lib/vehiculo-invoice-pdf-client";
-import { loadReactPdf, prefetchInvoicePdfLibs } from "@/components/(base)/vehiculos/lib/vehiculo-react-pdf";
+import { lockPageScroll } from "@/components/ui/general-modal";
+import { resolveVehiculoInvoiceSource } from "@/components/(base)/vehiculos/lib/vehiculo-galeria-items";
+import { VehiculoInvoicePanel } from "@/components/(base)/vehiculos/forms/VehiculoInvoicePanel";
 import { vehiculosTablaAddOutlineButtonClass } from "@/components/(base)/vehiculos/lib/tabla-vehiculos-ui";
 import type { VehiculoListRow } from "@/components/(base)/vehiculos/lib/zod";
 import type { PublicInventoryItem } from "./lib/zod";
-
-const invoicePdfViewerLoader = () =>
-  import("@/components/(base)/vehiculos/forms/CarPdfInlineViewer").then(
-    (m) => m.CarPdfInlineViewer,
-  );
-
-const CarPdfInlineViewer = dynamic(invoicePdfViewerLoader, {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center">
-      <span className="size-8 rounded-full border-2 border-brand/25 border-t-brand animate-spin dark:border-brand-bright/25 dark:border-t-brand-bright" />
-    </div>
-  ),
-});
 
 const inventarioDetalleToggleFooterClass =
   "flex shrink-0 justify-center border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-700 md:px-6";
 
 const inventarioDetalleToggleBtnClass = cn(
   vehiculosTablaAddOutlineButtonClass,
-  "w-[7rem] max-lg:w-full",
+  "w-auto max-lg:w-auto",
 );
 
 const inventarioDetalleInvoicePanelClass =
@@ -52,42 +35,6 @@ type InventarioPublicoDetalleProps = {
   onClose: () => void;
 };
 
-function InvoicePanel({
-  invoiceSource,
-  generatedBlobUrl,
-  generatedLoading,
-  generatedError,
-}: {
-  invoiceSource: VehiculoInvoiceSource;
-  generatedBlobUrl: string | null;
-  generatedLoading: boolean;
-  generatedError: boolean;
-}) {
-  const viewerClassName = "h-full min-h-0 w-full min-w-0 flex-1 rounded-2xl";
-
-  if (invoiceSource.kind === "uploaded-pdf") {
-    return <CarPdfInlineViewer url={invoiceSource.url} className={viewerClassName} />;
-  }
-
-  if (generatedError) {
-    return (
-      <p className="flex flex-1 items-center justify-center px-4 py-8 text-center text-sm font-semibold text-destructive">
-        No se pudo cargar la factura.
-      </p>
-    );
-  }
-
-  if (generatedLoading || !generatedBlobUrl) {
-    return (
-      <div className="flex h-full min-h-0 w-full flex-1 items-center justify-center">
-        <span className="size-8 rounded-full border-2 border-brand/25 border-t-brand animate-spin dark:border-brand-bright/25 dark:border-t-brand-bright" />
-      </div>
-    );
-  }
-
-  return <CarPdfInlineViewer url={generatedBlobUrl} className={viewerClassName} />;
-}
-
 export function InventarioPublicoDetalle({
   item,
   isOpen,
@@ -97,32 +44,17 @@ export function InventarioPublicoDetalle({
   const [copied, setCopied] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"photos" | "invoice">("photos");
-  const [generatedBlobUrl, setGeneratedBlobUrl] = useState<string | null>(null);
-  const [generatedLoading, setGeneratedLoading] = useState(false);
-  const [generatedError, setGeneratedError] = useState(false);
 
   const invoiceRow = item?.invoiceRow as VehiculoListRow | undefined;
   const invoiceSource = useMemo(
     () => (invoiceRow ? resolveVehiculoInvoiceSource(invoiceRow) : null),
     [invoiceRow],
   );
-  const invoiceKind = invoiceSource?.kind ?? null;
   const itemId = item?.id ?? null;
-  const invoiceRowRef = useRef(invoiceRow);
-  invoiceRowRef.current = invoiceRow;
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
-    } else {
-      document.body.style.overflow = "unset";
-      document.body.style.touchAction = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-      document.body.style.touchAction = "unset";
-    };
+    if (!isOpen) return;
+    return lockPageScroll();
   }, [isOpen]);
 
   useEffect(() => {
@@ -135,65 +67,9 @@ export function InventarioPublicoDetalle({
     setIsImageLoading(true);
   }, [activeImage]);
 
-  useEffect(() => {
-    const row = invoiceRowRef.current;
-    if (!isOpen || !itemId || !row || !invoiceKind) return;
-
-    prefetchInvoicePdfLibs();
-    void loadReactPdf();
-    void invoicePdfViewerLoader();
-
-    let active = true;
-    let prefetchedUrl: string | null = null;
-
-    if (invoiceKind !== "generated-invoice") {
-      setGeneratedBlobUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-      setGeneratedLoading(false);
-      setGeneratedError(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    setGeneratedBlobUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-    setGeneratedLoading(true);
-    setGeneratedError(false);
-
-    void createGeneratedInvoiceBlobUrl(row)
-      .then((url) => {
-        if (!active) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        prefetchedUrl = url;
-        setGeneratedBlobUrl(url);
-      })
-      .catch((err) => {
-        console.error("prefetch generated invoice:", err);
-        if (active) {
-          setGeneratedBlobUrl(null);
-          setGeneratedError(true);
-        }
-      })
-      .finally(() => {
-        if (active) setGeneratedLoading(false);
-      });
-
-    return () => {
-      active = false;
-      if (prefetchedUrl) URL.revokeObjectURL(prefetchedUrl);
-      setGeneratedBlobUrl(null);
-      setGeneratedLoading(false);
-    };
-  }, [isOpen, itemId, invoiceKind]);
-
-  if (!isOpen || !item || !invoiceSource) return null;
+  if (!isOpen || !item || !invoiceSource || typeof document === "undefined") {
+    return null;
+  }
 
   const images = item.imageUrls.length > 0 ? item.imageUrls : [];
   const activeSrc = images[activeImage];
@@ -208,8 +84,8 @@ export function InventarioPublicoDetalle({
 
   const statusAvailable = item.status === "AVAILABLE";
 
-  return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-hidden p-0 sm:p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-hidden overscroll-none p-0 sm:p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-2xl dark:bg-black/80"
         onClick={onClose}
@@ -341,12 +217,9 @@ export function InventarioPublicoDetalle({
             aria-hidden={showingPhotos}
           >
             <div className={inventarioDetalleInvoicePanelClass}>
-              <InvoicePanel
-                invoiceSource={invoiceSource}
-                generatedBlobUrl={generatedBlobUrl}
-                generatedLoading={generatedLoading}
-                generatedError={generatedError}
-              />
+              {invoiceRow ? (
+                <VehiculoInvoicePanel invoiceSource={invoiceSource} row={invoiceRow} />
+              ) : null}
             </div>
           </motion.div>
         </div>
@@ -371,6 +244,7 @@ export function InventarioPublicoDetalle({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

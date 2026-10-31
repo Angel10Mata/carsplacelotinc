@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -118,6 +118,20 @@ export function ClientesTabla() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(15);
+  const [placeholderBuscar, setPlaceholderBuscar] = useState(
+    "Buscar por nombre, NIT o dirección...",
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () =>
+      setPlaceholderBuscar(
+        mq.matches ? "Buscar" : "Buscar por nombre, NIT o dirección...",
+      );
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   const filtered = useMemo(() => {
     const list = clientes ?? [];
@@ -168,12 +182,12 @@ export function ClientesTabla() {
               >
                 <div className="relative min-w-0 w-full lg:flex-1">
                   <Search
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                     aria-hidden
                   />
                   <input
                     type="search"
-                    placeholder="Buscar por nombre, NIT o dirección..."
+                    placeholder={placeholderBuscar}
                     value={search}
                     onChange={(e) => {
                       setSearch(e.target.value);
@@ -214,7 +228,7 @@ export function ClientesTabla() {
           {!isLoading && !isError ? (
             <>
             <div className={clientesTablaDesktopTableWrapClass}>
-              <table className="w-full table-fixed border-collapse text-base">
+              <table className="w-full border-collapse text-base">
                 <colgroup>
                   <col style={clientesTablaColAnchoStyle(clientesTablaAnchoNo)} />
                   <col
@@ -247,7 +261,11 @@ export function ClientesTabla() {
                       Nombre
                     </th>
                     <th
-                      className={cn(cellPad, clientesTablaCellDividerClass, "text-center")}
+                      className={cn(
+                        cellPadEstrecho,
+                        clientesTablaCellDividerClass,
+                        "w-0 min-w-max whitespace-nowrap text-center",
+                      )}
                       style={clientesTablaColAnchoStyle(clientesTablaAnchoNit)}
                     >
                       NIT
@@ -256,7 +274,7 @@ export function ClientesTabla() {
                       className={cn(
                         cellPad,
                         clientesTablaCellDividerClass,
-                        "min-w-0 text-center",
+                        "min-w-0 w-full text-center",
                       )}
                     >
                       Dirección
@@ -306,9 +324,9 @@ export function ClientesTabla() {
                         </td>
                         <td
                           className={cn(
-                            cellPad,
+                            cellPadEstrecho,
                             clientesTablaCellDividerClass,
-                            "text-center font-mono tabular-nums",
+                            "w-0 min-w-max whitespace-nowrap text-center font-mono tabular-nums",
                           )}
                           style={clientesTablaColAnchoStyle(clientesTablaAnchoNit)}
                         >
@@ -318,7 +336,7 @@ export function ClientesTabla() {
                           className={cn(
                             cellPad,
                             clientesTablaCellDividerClass,
-                            "min-w-0 text-muted-foreground",
+                            "min-w-0 w-full text-muted-foreground",
                           )}
                         >
                           {row.direccion ?? "—"}

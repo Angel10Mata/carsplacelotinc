@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { DotPattern } from "@/components/ui/dot-pattern";
+import { ModuleRouteReady } from "@/components/ui/module-route-ready";
 import { cn } from "@/lib/utils";
 
 type AppPageBackgroundProps = {
@@ -39,7 +40,7 @@ export function AppPageBackground({
           contentClassName,
         )}
       >
-        {children}
+        <ModuleRouteReady>{children}</ModuleRouteReady>
       </div>
     </div>
   );
